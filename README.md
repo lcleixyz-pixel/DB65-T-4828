@@ -119,10 +119,12 @@ git status
 git log --oneline
 
 # 推送到 GitHub（远程已配置）
-git push -u origin main
+git push origin main
 ```
 
-**远程仓库**：[https://github.com/lcleixyz-pixel/DB65-T-4828](https://github.com/lcleixyz-pixel/DB65-T-4828.git)
+**远程仓库**：[https://github.com/lcleixyz-pixel/DB65-T-4828](https://github.com/lcleixyz-pixel/DB65-T-4828)
+
+若 `git push` 报 `Failed to connect to github.com`，多为 DNS 解析到错误 IP；本机若使用 Clash 等代理，需让 Git 走本地代理（本仓库已配置 `http.proxy=http://127.0.0.1:57777`，端口随代理软件变化时请执行 `git config --local http.proxy http://127.0.0.1:<端口>` 更新）。
 
 `.gitignore` 已排除 `.venv`、`__pycache__` 及本地导出的 xlsx 等；`presets.json` 会纳入版本库。
 
