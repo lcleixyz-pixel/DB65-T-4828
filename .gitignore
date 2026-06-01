@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# UV-Vis 工具依赖安装标记（由启动脚本生成）
+紫外-可见光谱/UV-Vis 光谱导数分析工具/.venv/
+
+# 操作系统
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+*~
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# 日志与临时文件
+*.log
+*.tmp
+.cache/
+
+# 本地数据与导出（勿提交实测谱图/报告草稿）
+*.xlsx
+!**/presets.json

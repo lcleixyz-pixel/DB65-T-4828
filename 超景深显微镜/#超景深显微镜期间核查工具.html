@@ -1,0 +1,2541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超景深显微镜期间核查工具 - 新疆中和鉴珠宝玉石质量检测研究所</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#007AFF',
+                        secondary: '#F2F2F7',
+                        success: '#34C759',
+                        danger: '#FF3B30',
+                        warning: '#FF9500',
+                        info: '#5AC8FA',
+                        light: '#FAFAFA',
+                        dark: '#1C1C1E'
+                    },
+                    fontFamily: {
+                        'sans': ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @layer utilities {
+            .input-field {
+                @apply w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200 bg-white;
+            }
+            .btn {
+                @apply px-5 py-2.5 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 shadow-sm;
+            }
+            .btn-primary {
+                @apply bg-primary text-white hover:bg-primary/90 hover:shadow-md focus:ring-primary/50 active:scale-[0.98];
+            }
+            .btn-secondary {
+                @apply bg-secondary text-dark hover:bg-gray-200 focus:ring-gray-300/50 active:scale-[0.98];
+            }
+            .btn-success {
+                @apply bg-success text-white hover:bg-success/90 hover:shadow-md focus:ring-success/50 active:scale-[0.98];
+            }
+            .card {
+                @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-8;
+            }
+            .step-item {
+                @apply flex items-center p-3.5 rounded-xl cursor-pointer transition-all duration-200;
+            }
+            .step-item.active {
+                @apply bg-primary text-white shadow-md;
+            }
+            .step-item.completed {
+                @apply bg-success/10 text-success;
+            }
+            .step-item.pending {
+                @apply hover:bg-gray-50;
+            }
+            .table-header {
+                @apply px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gray-50/80;
+            }
+            .table-cell {
+                @apply px-5 py-4 whitespace-nowrap text-sm text-gray-900;
+            }
+        }
+        
+        /* 打印样式 */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            .page-break {
+                page-break-after: always;
+                break-after: always;
+            }
+            .page-break-avoid {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            @page {
+                margin: 1.5cm;
+                size: A4 portrait;
+            }
+            table {
+                page-break-inside: auto;
+            }
+            tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
+        
+        .print-only {
+            display: none;
+        }
+        
+        /* 隐藏步骤内容 */
+        .step-content {
+            display: none;
+        }
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        /* Apple 风格全局优化 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body class="bg-light min-h-screen">
+    <!-- 主容器 - 工作区 -->
+    <div id="workArea" class="no-print">
+        <div class="flex min-h-screen">
+            <!-- 左侧导航 -->
+            <div class="w-64 bg-white border-r border-gray-200 fixed h-full overflow-y-auto">
+                <div class="p-6">
+                    <!-- 机构标识 -->
+                    <div class="mb-6 pb-4 border-b border-gray-100">
+                        <div class="flex items-center gap-2 mb-2">
+                            <img src="logo.png" alt="机构Logo" class="w-10 h-10 object-contain flex-shrink-0">
+                            <div class="min-w-0">
+                                <p class="text-[11px] font-semibold text-primary leading-tight">新疆中和鉴珠宝玉石质量检测研究所</p>
+                                <p class="text-[9px] text-gray-400 mt-0.5">Xinjiang Zhonghejian Gem &amp; Jade Quality Testing Institute</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center mb-8">
+                        <img src="超景深显微镜.png" alt="超景深显微镜" class="w-10 h-10 object-contain rounded-xl mr-3 shadow-sm border border-gray-100">
+                        <div>
+                            <h1 class="text-lg font-bold text-gray-900">期间核查</h1>
+                            <p class="text-xs text-gray-500">超景深显微镜</p>
+                        </div>
+                    </div>
+                    
+                    <nav id="stepNav" class="space-y-1.5">
+                        <div class="step-item active" data-step="1">
+                            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-sm font-semibold">1</span>
+                            </div>
+                            <span class="text-sm font-medium">基本信息</span>
+                        </div>
+                        <div class="step-item pending" data-step="2">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-sm font-semibold text-gray-600">2</span>
+                            </div>
+                            <span class="text-sm font-medium">外观检查</span>
+                        </div>
+                        <div class="step-item pending" data-step="3">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-sm font-semibold text-gray-600">3</span>
+                            </div>
+                            <span class="text-sm font-medium">E<sub>XY</sub>测量</span>
+                        </div>
+                        <div class="step-item pending" data-step="4">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-sm font-semibold text-gray-600">4</span>
+                            </div>
+                            <span class="text-sm font-medium">E<sub>Z</sub>测量</span>
+                        </div>
+                        <div class="step-item pending" data-step="5">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-sm font-semibold text-gray-600">5</span>
+                            </div>
+                            <span class="text-sm font-medium">E<sub>V</sub>测量</span>
+                        </div>
+                        <div class="step-item pending" data-step="6">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-sm font-semibold text-gray-600">6</span>
+                            </div>
+                            <span class="text-sm font-medium">P<sub>V</sub>测量</span>
+                        </div>
+                        <div class="step-item pending" data-step="7">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-sm font-semibold text-gray-600">7</span>
+                            </div>
+                            <span class="text-sm font-medium">P<sub>2D</sub>测量</span>
+                        </div>
+                        <div class="step-item pending" data-step="8">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-sm font-semibold text-gray-600">8</span>
+                            </div>
+                            <span class="text-sm font-medium">P<sub>Z</sub>测量</span>
+                        </div>
+                        <div class="step-item pending" data-step="9">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 shadow-sm">
+                                <span class="text-sm font-semibold text-gray-600">9</span>
+                            </div>
+                            <span class="text-sm font-medium">综合结果</span>
+                        </div>
+                    </nav>
+                    
+                    <div class="mt-8 p-4 bg-gradient-to-br from-warning/10 to-orange-50 border border-warning/30 rounded-2xl">
+                        <p class="text-xs text-warning font-medium">
+                            <i class="fa fa-warning mr-1.5"></i>
+                            刷新页面将丢失数据
+                        </p>
+                    </div>
+                    
+                    <!-- 安全注意事项 -->
+                    <div class="mt-3 p-4 bg-gradient-to-br from-danger/10 to-red-50 border border-danger/30 rounded-2xl">
+                        <p class="text-xs font-semibold text-danger mb-2">
+                            <i class="fa fa-exclamation-circle mr-1.5"></i>安全注意事项
+                        </p>
+                        <ul class="text-xs text-red-700 ml-4 space-y-1">
+                            <li>• 标准器必须佩戴手套</li>
+                            <li>• 禁止直视强光源</li>
+                            <li>• 物镜转换需轻旋到位</li>
+                            <li>• 异常立即断电上报</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button onclick="loadAllDemoData()" class="btn btn-primary w-full text-sm">
+                            <i class="fa fa-magic mr-1"></i>
+                            加载所有演示数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧内容区 -->
+            <div class="ml-64 flex-1 flex flex-col min-h-screen">
+                <!-- 顶部机构条 -->
+                <div class="flex-shrink-0 px-10 pt-6 pb-2 bg-white/80 backdrop-blur-sm border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <img src="logo.png" alt="机构Logo" class="h-6 object-contain">
+                            <span class="text-sm font-semibold text-gray-600">新疆中和鉴珠宝玉石质量检测研究所</span>
+                        </div>
+                        <span class="text-xs text-gray-400">超景深显微镜期间核查</span>
+                    </div>
+                </div>
+                <div class="flex-1 p-10 bg-gradient-to-br from-gray-50 to-blue-50/20">
+                <!-- 步骤 1: 基本信息录入 -->
+                <div id="step1" class="step-content active">
+                    <div class="card">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-8 pb-4 border-b-2 border-gray-100">基本信息录入</h2>
+                        
+                        <div class="space-y-8">
+                            <!-- 仪器信息 -->
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                    <div class="w-1 h-6 bg-primary rounded-full mr-3"></div>
+                                    仪器信息
+                                </h3>
+                                <div class="flex flex-col md:flex-row gap-6">
+                                    <div class="flex-shrink-0">
+                                        <img src="超景深显微镜.png" alt="超景深显微镜" class="w-40 h-40 object-contain rounded-2xl border border-gray-100 shadow-sm bg-white p-2">
+                                        <p class="text-xs text-gray-500 mt-2 text-center">超景深显微镜</p>
+                                    </div>
+                                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">型号 *</label>
+                                            <input type="text" id="deviceModel" value="DI-AM1160" class="input-field" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">仪器编号 *</label>
+                                            <input type="text" id="deviceNumber" class="input-field" required>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">出厂编号</label>
+                                            <input type="text" id="serialNumber" class="input-field">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 核查信息 -->
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                    <div class="w-1 h-6 bg-primary rounded-full mr-3"></div>
+                                    核查信息
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">核查日期 *</label>
+                                        <input type="date" id="checkDate" class="input-field" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">核查类型 *</label>
+                                        <select id="checkType" class="input-field" required>
+                                            <option value="定期">定期核查</option>
+                                            <option value="异常">异常核查</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        <!-- 核查前准备提示 -->
+                        <div class="mb-6 bg-gradient-to-br from-amber-50 to-yellow-50 border-l-4 border-warning rounded-r-2xl p-5 shadow-sm">
+                            <h3 class="text-md font-bold text-amber-800 mb-3 flex items-center">
+                                <i class="fa fa-exclamation-triangle mr-2 text-warning"></i>核查前准备确认
+                            </h3>
+                            <ul class="text-sm text-amber-700 space-y-2 ml-6">
+                                <li><strong>预热要求：</strong>设备通电预热至少 <strong>30分钟</strong>，以达到热平衡状态</li>
+                                <li><strong>设备检查：</strong>观察各轴运动是否平稳、无异响，软件显示正常，无异常告警</li>
+                                <li><strong>环境记录：</strong>核查开始前，<strong>必须</strong>记录并确认温湿度</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 环境条件 -->
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                <div class="w-1 h-6 bg-primary rounded-full mr-3"></div>
+                                环境条件
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">温度 (℃) * (10~30)</label>
+                                    <input type="number" id="temperature" step="0.1" min="10" max="30" class="input-field" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">湿度 (%) * (15~70)</label>
+                                    <input type="number" id="humidity" step="1" min="15" max="70" class="input-field" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 标准器信息 -->
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                <div class="w-1 h-6 bg-primary rounded-full mr-3"></div>
+                                标准器信息
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">玻璃刻度尺编号</label>
+                                    <input type="text" id="rulerNumber" class="input-field">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">量块编号</label>
+                                    <input type="text" id="gaugeNumber" class="input-field">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">圆靶标编号</label>
+                                    <input type="text" id="targetNumber" class="input-field">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 人员信息 -->
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                <div class="w-1 h-6 bg-primary rounded-full mr-3"></div>
+                                人员信息
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">核查人员 *</label>
+                                    <input type="text" id="operator" class="input-field" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">复核人员 *</label>
+                                    <input type="text" id="reviewer" class="input-field" required>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 步骤 2: 外观功能检查 -->
+                <div id="step2" class="step-content">
+                    <div class="card">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-8 pb-4 border-b-2 border-gray-100">外观与功能性检查</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center p-4 border rounded-lg hover:bg-gray-50">
+                                <input type="checkbox" id="check1" class="w-5 h-5 text-primary rounded">
+                                <label for="check1" class="ml-3 text-sm font-medium text-gray-700">载物台运动正常，无卡顿或异响</label>
+                            </div>
+                            <div class="flex items-center p-4 border rounded-lg hover:bg-gray-50">
+                                <input type="checkbox" id="check2" class="w-5 h-5 text-primary rounded">
+                                <label for="check2" class="ml-3 text-sm font-medium text-gray-700">镜头清洁，无明显污渍或划痕</label>
+                            </div>
+                            <div class="flex items-center p-4 border rounded-lg hover:bg-gray-50">
+                                <input type="checkbox" id="check3" class="w-5 h-5 text-primary rounded">
+                                <label for="check3" class="ml-3 text-sm font-medium text-gray-700">光源稳定，亮度均匀</label>
+                            </div>
+                            <div class="flex items-center p-4 border rounded-lg hover:bg-gray-50">
+                                <input type="checkbox" id="check4" class="w-5 h-5 text-primary rounded">
+                                <label for="check4" class="ml-3 text-sm font-medium text-gray-700">软件功能正常，可正常拼接和测量</label>
+                            </div>
+                            
+                            <div class="mt-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">备注（如有异常情况请说明）</label>
+                                <textarea id="appearanceNotes" rows="4" class="input-field" placeholder="请输入备注信息..."></textarea>
+                            </div>
+                            
+                            <div id="appearanceResult" class="mt-4 p-4 rounded-lg hidden">
+                                <div class="flex items-center">
+                                    <i class="fa fa-check-circle text-2xl mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold">判定结果</p>
+                                        <p id="appearanceResultText" class="text-sm"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 步骤 3: EXY 测量 -->
+                <div id="step3" class="step-content">
+                    <div class="card">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-100">平面尺寸测量误差 (E<sub>XY</sub>)</h2>
+                        <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4">
+                            <h3 class="text-sm font-semibold text-blue-800 mb-2">操作要求</h3>
+                            <ul class="text-sm text-blue-700 space-y-1 ml-4">
+                                <li><strong>标准器：</strong>0-20mm 玻璃刻度尺（分度 0.1mm）</li>
+                                <li><strong>倍率设置：</strong>50X（固定）</li>
+                                <li><strong>X轴方向：</strong>使用 2D 拼接模式（<strong>手动 5×1 拼接</strong>），沿X轴拼接完整影像</li>
+                                <li><strong>Y轴方向：</strong>将刻度尺旋转 90°，使用 2D 拼接模式（<strong>手动 1×7 拼接</strong>），沿Y轴拼接</li>
+                                <li><strong>测量方法：</strong>使用"<strong>垂基线</strong>"功能，测量5个刻度位置（4mm, 8mm, 12mm, 16mm, 20mm）</li>
+                                <li><strong>重复性：</strong>每个间隔重复测量 3 次</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 单位输入提示 -->
+                        <div class="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start">
+                            <i class="fa fa-info-circle text-amber-600 text-lg mt-0.5 mr-2"></i>
+                            <div class="text-sm text-amber-800">
+                                <strong>单位说明：</strong>仪器输出单位为 μm，可直接输入（如 4000、8000）；工具将自动转换为 mm 进行计算。标准值已预设为 mm（4、8、12、16、20）。
+                            </div>
+                        </div>
+                        
+                        <!-- X方向测量 -->
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3 flex items-center">
+                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">X方向</span>
+                                <button onclick="loadDemoDataEXY('x')" class="btn btn-secondary text-xs ml-auto">
+                                    <i class="fa fa-magic mr-1"></i>加载演示数据
+                                </button>
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full border">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-header">标准值(mm)</th>
+                                            <th class="table-header">第1次(μm)</th>
+                                            <th class="table-header">第2次(μm)</th>
+                                            <th class="table-header">第3次(μm)</th>
+                                            <th class="table-header">平均值(mm)</th>
+                                            <th class="table-header">示值误差(mm)</th>
+                                            <th class="table-header">重复性(mm)</th>
+                                            <th class="table-header">判定</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="exyXTable">
+                                        <!-- 动态生成 5 行 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Y方向测量 -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3 flex items-center">
+                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded mr-2">Y方向</span>
+                                <button onclick="loadDemoDataEXY('y')" class="btn btn-secondary text-xs ml-auto">
+                                    <i class="fa fa-magic mr-1"></i>加载演示数据
+                                </button>
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full border">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-header">标准值(mm)</th>
+                                            <th class="table-header">第1次(μm)</th>
+                                            <th class="table-header">第2次(μm)</th>
+                                            <th class="table-header">第3次(μm)</th>
+                                            <th class="table-header">平均值(mm)</th>
+                                            <th class="table-header">示值误差(mm)</th>
+                                            <th class="table-header">重复性(mm)</th>
+                                            <th class="table-header">判定</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="exyYTable">
+                                        <!-- 动态生成 5 行 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- 综合判定结果 -->
+                        <div id="exyResult" class="mt-6 p-4 rounded-lg hidden">
+                            <div class="flex items-center">
+                                <i class="fa text-2xl mr-3"></i>
+                                <div>
+                                    <p class="font-semibold">E<sub>XY</sub> 判定结果</p>
+                                    <p id="exyResultText" class="text-sm"></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 误差图表 -->
+                        <div class="mt-6">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3">误差可视化</h3>
+                            <canvas id="exyChart" height="80"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 步骤 4: EZ 测量 -->
+                <div id="step4" class="step-content">
+                    <div class="card">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-100">垂直尺寸测量误差 (E<sub>Z</sub>)</h2>
+                        <div class="mb-6 bg-green-50 border-l-4 border-green-400 p-4">
+                            <h3 class="text-sm font-semibold text-green-800 mb-2">操作要求</h3>
+                            <ul class="text-sm text-green-700 space-y-1 ml-4">
+                                <li><strong>标准器：</strong>4mm 量块、5mm 量块（形成 1mm 高度差台阶）</li>
+                                <li><strong>倍率设置：</strong>推荐 300X（3D 模式）</li>
+                                <li><strong>拼接方法：</strong>使用 3D 拼接功能，以高度差台阶为视野中心进行 <strong>3×1 高精度拼接</strong></li>
+                                <li><strong>测量方法：</strong>将 4mm 量块表面设为基准面，对 5mm 量块表面测量 3 个点（中心 + 2 端点）</li>
+                                <li><strong>重复性：</strong>重复拼接并测量 3 次</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 单位输入提示 -->
+                        <div class="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start">
+                            <i class="fa fa-info-circle text-amber-600 text-lg mt-0.5 mr-2"></i>
+                            <div class="text-sm text-amber-800">
+                                <strong>单位说明：</strong>仪器输出单位为 μm，可直接输入（标准值 1mm = 1000μm）；工具将自动转换为 mm 进行计算。
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end mb-4">
+                            <button onclick="loadDemoDataEZ()" class="btn btn-secondary text-sm">
+                                <i class="fa fa-magic mr-1"></i>加载演示数据
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border">
+                                <thead>
+                                    <tr>
+                                        <th class="table-header">测量次数</th>
+                                        <th class="table-header">中心点(μm)</th>
+                                        <th class="table-header">端点1(μm)</th>
+                                        <th class="table-header">端点2(μm)</th>
+                                        <th class="table-header">代表值(mm)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b">
+                                        <td class="table-cell font-medium">第1次</td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ez_1_center" class="input-field text-sm" oninput="calculateEZ()"></td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ez_1_end1" class="input-field text-sm" oninput="calculateEZ()"></td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ez_1_end2" class="input-field text-sm" oninput="calculateEZ()"></td>
+                                        <td class="table-cell font-medium" id="ez_1_avg">-</td>
+                                    </tr>
+                                    <tr class="border-b">
+                                        <td class="table-cell font-medium">第2次</td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ez_2_center" class="input-field text-sm" oninput="calculateEZ()"></td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ez_2_end1" class="input-field text-sm" oninput="calculateEZ()"></td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ez_2_end2" class="input-field text-sm" oninput="calculateEZ()"></td>
+                                        <td class="table-cell font-medium" id="ez_2_avg">-</td>
+                                    </tr>
+                                    <tr class="border-b">
+                                        <td class="table-cell font-medium">第3次</td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ez_3_center" class="input-field text-sm" oninput="calculateEZ()"></td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ez_3_end1" class="input-field text-sm" oninput="calculateEZ()"></td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ez_3_end2" class="input-field text-sm" oninput="calculateEZ()"></td>
+                                        <td class="table-cell font-medium" id="ez_3_avg">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                <h3 class="text-sm font-medium text-blue-700 mb-1">总平均值</h3>
+                                <div class="text-2xl font-bold text-blue-900" id="ez_total_avg">-</div>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                                <h3 class="text-sm font-medium text-purple-700 mb-1">示值误差 (mm)</h3>
+                                <div class="text-2xl font-bold text-purple-900" id="ez_error">-</div>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                                <h3 class="text-sm font-medium text-orange-700 mb-1">重复性 (mm)</h3>
+                                <div class="text-2xl font-bold text-orange-900" id="ez_repeatability">-</div>
+                            </div>
+                        </div>
+                        
+                        <div id="ezResult" class="mt-6 p-4 rounded-lg hidden">
+                            <div class="flex items-center">
+                                <i class="fa text-2xl mr-3"></i>
+                                <div>
+                                    <p class="font-semibold">E<sub>Z</sub> 判定结果</p>
+                                    <p id="ezResultText" class="text-sm"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 步骤 5: EV 测量 -->
+                <div id="step5" class="step-content">
+                    <div class="card">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-100">影像测头尺寸测量误差 (E<sub>V</sub>)</h2>
+                        <div class="mb-6 bg-purple-50 border-l-4 border-purple-400 p-4">
+                            <h3 class="text-sm font-semibold text-purple-800 mb-2">操作要求</h3>
+                            <ul class="text-sm text-purple-700 space-y-1 ml-4">
+                                <li><strong>说明：</strong>仅利用视场（FOV）测量，<strong>禁止移动载物台</strong></li>
+                                <li><strong>标准器：</strong>0-1mm 玻璃刻度尺（分度 0.01mm）</li>
+                                <li><strong>倍率设置：</strong>300X</li>
+                                <li><strong>测量方法：</strong>使用"<strong>垂基线</strong>"功能，测量覆盖视场约 2/3 的刻度（如 0.6mm 或 0.8mm）</li>
+                                <li><strong>测量位置：</strong>改变刻度尺在视场中的位置（上、中、下），各测量 3 个位置</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 单位输入提示 -->
+                        <div class="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start">
+                            <i class="fa fa-info-circle text-amber-600 text-lg mt-0.5 mr-2"></i>
+                            <div class="text-sm text-amber-800">
+                                <strong>单位说明：</strong>标准值输入 mm（如 0.6、0.8）；仪器输出单位为 μm，可直接输入（如 600、800）；工具将自动转换为 mm 进行计算。
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end mb-4">
+                            <button onclick="loadDemoDataEV()" class="btn btn-secondary text-sm">
+                                <i class="fa fa-magic mr-1"></i>加载演示数据
+                            </button>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">标准值 (mm)</label>
+                            <input type="number" step="0.01" id="ev_standard" class="input-field w-48" placeholder="如 0.6 或 0.8" oninput="calculateEV()">
+                            <p class="text-xs text-gray-500 mt-1">覆盖视场约2/3的刻度长度</p>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border">
+                                <thead>
+                                    <tr>
+                                        <th class="table-header">测量位置</th>
+                                        <th class="table-header">测量值 (μm)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b">
+                                        <td class="table-cell font-medium">位置1 (上)</td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ev_1" class="input-field text-sm" oninput="calculateEV()"></td>
+                                    </tr>
+                                    <tr class="border-b">
+                                        <td class="table-cell font-medium">位置2 (中)</td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ev_2" class="input-field text-sm" oninput="calculateEV()"></td>
+                                    </tr>
+                                    <tr class="border-b">
+                                        <td class="table-cell font-medium">位置3 (下)</td>
+                                        <td class="table-cell"><input type="number" step="0.0001" id="ev_3" class="input-field text-sm" oninput="calculateEV()"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                <h3 class="text-sm font-medium text-blue-700 mb-1">平均值 (mm)</h3>
+                                <div class="text-2xl font-bold text-blue-900" id="ev_avg">-</div>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                                <h3 class="text-sm font-medium text-purple-700 mb-1">示值误差 (mm)</h3>
+                                <div class="text-2xl font-bold text-purple-900" id="ev_error">-</div>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                                <h3 class="text-sm font-medium text-orange-700 mb-1">重复性 (mm)</h3>
+                                <div class="text-2xl font-bold text-orange-900" id="ev_repeatability">-</div>
+                            </div>
+                        </div>
+                        
+                        <div id="evResult" class="mt-6 p-4 rounded-lg hidden">
+                            <div class="flex items-center">
+                                <i class="fa text-2xl mr-3"></i>
+                                <div>
+                                    <p class="font-semibold">E<sub>V</sub> 判定结果</p>
+                                    <p id="evResultText" class="text-sm"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 步骤 6: PV 测量 -->
+                <div id="step6" class="step-content">
+                    <div class="card">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-100">影像测头探测误差 (P<sub>V</sub>)</h2>
+                        <div class="mb-6 bg-orange-50 border-l-4 border-orange-400 p-4">
+                            <h3 class="text-sm font-semibold text-orange-800 mb-2">操作要求</h3>
+                            <ul class="text-sm text-orange-700 space-y-1 ml-4">
+                                <li><strong>说明：</strong>仅借助视场开展测量，<strong>禁止移动载物台</strong>，以评估镜头畸变</li>
+                                <li><strong>标准器：</strong>圆形靶标</li>
+                                <li><strong>倍率设置：</strong>80X（使圆的大小约占视场 30%—60%）</li>
+                                <li><strong>采点方法：</strong>运用软件的"XY测量"功能，<strong>使 X/Y 轴与圆的下缘/左缘近乎相切</strong>，将测量点依次放置在圆周上均匀分布的 <strong>15 个位置</strong>（需保证采集点覆盖整个圆）</li>
+                                <li><strong>拟合：</strong>由软件计算最小二乘圆</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 坐标单位提示 -->
+                        <div class="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start">
+                            <i class="fa fa-info-circle text-amber-600 text-lg mt-0.5 mr-2"></i>
+                            <div class="text-sm text-amber-800">
+                                <strong>单位说明：</strong>X/Y 坐标值直接从仪器软件读取并输入（单位：μm），无需换算。结果 P<sub>V</sub> 单位为 μm。
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end mb-4">
+                            <button onclick="loadDemoDataPV()" class="btn btn-secondary text-sm">
+                                <i class="fa fa-magic mr-1"></i>加载演示数据
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto max-h-96 border rounded-lg mb-4">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="table-header">序号</th>
+                                        <th class="table-header">X坐标(μm)</th>
+                                        <th class="table-header">Y坐标(μm)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pvTable">
+                                    <!-- 15行通过JS生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <button onclick="calculatePV()" class="btn btn-primary w-full mb-4">
+                            <i class="fa fa-calculator mr-2"></i>计算PV
+                        </button>
+                        
+                        <div id="pvResults" class="hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                    <h3 class="text-sm font-medium text-blue-700 mb-1">圆心坐标</h3>
+                                    <div class="text-lg font-bold text-blue-900">
+                                        <span id="pv_center_x">-</span>, <span id="pv_center_y">-</span>
+                                    </div>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                                    <h3 class="text-sm font-medium text-green-700 mb-1">平均半径</h3>
+                                    <div class="text-2xl font-bold text-green-900" id="pv_radius">-</div>
+                                </div>
+                                <div class="bg-red-50 p-4 rounded-lg border border-red-100">
+                                    <h3 class="text-sm font-medium text-red-700 mb-1">P<sub>V</sub> (μm)</h3>
+                                    <div class="text-2xl font-bold text-red-900" id="pv_error">-</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <canvas id="pvChart" height="250"></canvas>
+                            </div>
+                            
+                            <div id="pvResult" class="p-4 rounded-lg hidden">
+                                <div class="flex items-center">
+                                    <i class="fa text-2xl mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold">P<sub>V</sub> 判定结果</p>
+                                        <p id="pvResultText" class="text-sm"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 步骤 7: P2D 测量 -->
+                <div id="step7" class="step-content">
+                    <div class="card">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-100">二维探测误差 (P<sub>2D</sub>)</h2>
+                        <div class="mb-6 bg-teal-50 border-l-4 border-teal-400 p-4">
+                            <h3 class="text-sm font-semibold text-teal-800 mb-2">操作要求</h3>
+                            <ul class="text-sm text-teal-700 space-y-1 ml-4">
+                                <li><strong>说明：</strong>需要<strong>联动载物台</strong>进行测量，以评估综合精度</li>
+                                <li><strong>标准器：</strong>圆形靶标</li>
+                                <li><strong>倍率设置：</strong>300X</li>
+                                <li><strong>拼接方法：</strong>使用 2D 拼接模式，以圆心为视野中心进行 <strong>4×3 拼接</strong>，得到圆靶标的完整影像</li>
+                                <li><strong>采点方法：</strong>运用软件的"XY测量"功能，<strong>使 X/Y 轴与圆的下缘/左缘近乎相切</strong>，将测量点依次放置在圆周上均匀分布的 <strong>25 个位置</strong>（需保证采集点覆盖整个圆）</li>
+                                <li><strong>拟合：</strong>采用最小二乘法拟合圆形</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 坐标单位提示 -->
+                        <div class="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start">
+                            <i class="fa fa-info-circle text-amber-600 text-lg mt-0.5 mr-2"></i>
+                            <div class="text-sm text-amber-800">
+                                <strong>单位说明：</strong>X/Y 坐标值直接从仪器软件读取并输入（单位：μm），无需换算。结果 P<sub>2D</sub> 单位为 μm。
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end mb-4">
+                            <button onclick="loadDemoDataP2D()" class="btn btn-secondary text-sm">
+                                <i class="fa fa-magic mr-1"></i>加载演示数据
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto max-h-96 border rounded-lg mb-4">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="table-header">序号</th>
+                                        <th class="table-header">X坐标(μm)</th>
+                                        <th class="table-header">Y坐标(μm)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="p2dTable">
+                                    <!-- 25行通过JS生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <button onclick="calculateP2D()" class="btn btn-primary w-full mb-4">
+                            <i class="fa fa-calculator mr-2"></i>计算P2D
+                        </button>
+                        
+                        <div id="p2dResults" class="hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                    <h3 class="text-sm font-medium text-blue-700 mb-1">圆心坐标</h3>
+                                    <div class="text-lg font-bold text-blue-900">
+                                        <span id="p2d_center_x">-</span>, <span id="p2d_center_y">-</span>
+                                    </div>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                                    <h3 class="text-sm font-medium text-green-700 mb-1">平均半径</h3>
+                                    <div class="text-2xl font-bold text-green-900" id="p2d_radius">-</div>
+                                </div>
+                                <div class="bg-red-50 p-4 rounded-lg border border-red-100">
+                                    <h3 class="text-sm font-medium text-red-700 mb-1">P<sub>2D</sub> (μm)</h3>
+                                    <div class="text-2xl font-bold text-red-900" id="p2d_error">-</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <canvas id="p2dChart" height="250"></canvas>
+                            </div>
+                            
+                            <div id="p2dResult" class="p-4 rounded-lg hidden">
+                                <div class="flex items-center">
+                                    <i class="fa text-2xl mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold">P<sub>2D</sub> 判定结果</p>
+                                        <p id="p2dResultText" class="text-sm"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 步骤 8: PZ 测量 -->
+                <div id="step8" class="step-content">
+                    <div class="card">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-100">变倍探测误差 (P<sub>Z</sub>)</h2>
+                        <div class="mb-6 bg-indigo-50 border-l-4 border-indigo-400 p-4">
+                            <h3 class="text-sm font-semibold text-indigo-800 mb-2">操作要求</h3>
+                            <ul class="text-sm text-indigo-700 space-y-1 ml-4">
+                                <li><strong>标准器：</strong>0-1mm 玻璃刻度尺（分度 0.01mm）</li>
+                                <li><strong>变倍序列：</strong>200X → 150X → <strong>100X</strong></li>
+                                <li><strong>X轴测量：</strong>在 200X 倍率下，使十字形标尺的纵线与刻度尺零刻度线左侧外缘重合，记录 X 坐标；分别切换至 150X、100X，重复对齐并记录</li>
+                                <li><strong>Y轴测量：</strong>切回 200X，旋转载物台 90°，使十字形标尺的横线与刻度尺零刻度线上侧外缘重合，记录 Y 坐标；重复变倍操作</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 坐标单位提示 -->
+                        <div class="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start">
+                            <i class="fa fa-info-circle text-amber-600 text-lg mt-0.5 mr-2"></i>
+                            <div class="text-sm text-amber-800">
+                                <strong>单位说明：</strong>X/Y 坐标值直接从仪器软件读取并输入（单位：μm），无需换算。结果 P<sub>Z</sub> 单位为 μm。
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end mb-4">
+                            <button onclick="loadDemoDataPZ()" class="btn btn-secondary text-sm">
+                                <i class="fa fa-magic mr-1"></i>加载演示数据
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <!-- X方向 -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">X方向测量</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full border">
+                                        <thead>
+                                            <tr>
+                                                <th class="table-header">倍率</th>
+                                                <th class="table-header">X坐标值(μm)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b">
+                                                <td class="table-cell font-medium">200X</td>
+                                                <td class="table-cell"><input type="number" step="0.001" id="pz_x_200" class="input-field text-sm" oninput="calculatePZ()"></td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="table-cell font-medium">150X</td>
+                                                <td class="table-cell"><input type="number" step="0.001" id="pz_x_150" class="input-field text-sm" oninput="calculatePZ()"></td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="table-cell font-medium">100X</td>
+                                                <td class="table-cell"><input type="number" step="0.001" id="pz_x_100" class="input-field text-sm" oninput="calculatePZ()"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Y方向 -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">Y方向测量</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full border">
+                                        <thead>
+                                            <tr>
+                                                <th class="table-header">倍率</th>
+                                                <th class="table-header">Y坐标值(μm)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b">
+                                                <td class="table-cell font-medium">200X</td>
+                                                <td class="table-cell"><input type="number" step="0.001" id="pz_y_200" class="input-field text-sm" oninput="calculatePZ()"></td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="table-cell font-medium">150X</td>
+                                                <td class="table-cell"><input type="number" step="0.001" id="pz_y_150" class="input-field text-sm" oninput="calculatePZ()"></td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="table-cell font-medium">100X</td>
+                                                <td class="table-cell"><input type="number" step="0.001" id="pz_y_100" class="input-field text-sm" oninput="calculatePZ()"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                <h3 class="text-sm font-medium text-blue-700 mb-1">ΔX (μm)</h3>
+                                <div class="text-2xl font-bold text-blue-900" id="pz_delta_x">-</div>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                                <h3 class="text-sm font-medium text-green-700 mb-1">ΔY (μm)</h3>
+                                <div class="text-2xl font-bold text-green-900" id="pz_delta_y">-</div>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg border border-red-100">
+                                <h3 class="text-sm font-medium text-red-700 mb-1">P<sub>Z</sub> (μm)</h3>
+                                <div class="text-2xl font-bold text-red-900" id="pz_value">-</div>
+                            </div>
+                        </div>
+                        
+                        <div id="pzResult" class="mt-6 p-4 rounded-lg hidden">
+                            <div class="flex items-center">
+                                <i class="fa text-2xl mr-3"></i>
+                                <div>
+                                    <p class="font-semibold">P<sub>Z</sub> 判定结果</p>
+                                    <p id="pzResultText" class="text-sm"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 步骤 9: 综合结果 -->
+                <div id="step9" class="step-content">
+                    <div class="card">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">综合结果与报告</h2>
+                        
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">核查项目汇总</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full border">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="table-header">序号</th>
+                                            <th class="table-header">项目名称</th>
+                                            <th class="table-header">判定结果</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="summaryTable">
+                                        <tr class="border-b">
+                                            <td class="table-cell">1</td>
+                                            <td class="table-cell">外观与功能性检查</td>
+                                            <td class="table-cell" id="summary_appearance">-</td>
+                                        </tr>
+                                        <tr class="border-b">
+                                            <td class="table-cell">2</td>
+                                            <td class="table-cell">平面尺寸测量误差 (E<sub>XY</sub>)</td>
+                                            <td class="table-cell" id="summary_exy">-</td>
+                                        </tr>
+                                        <tr class="border-b">
+                                            <td class="table-cell">3</td>
+                                            <td class="table-cell">垂直尺寸测量误差 (E<sub>Z</sub>)</td>
+                                            <td class="table-cell" id="summary_ez">-</td>
+                                        </tr>
+                                        <tr class="border-b">
+                                            <td class="table-cell">4</td>
+                                            <td class="table-cell">影像测头尺寸测量误差 (E<sub>V</sub>)</td>
+                                            <td class="table-cell" id="summary_ev">-</td>
+                                        </tr>
+                                        <tr class="border-b">
+                                            <td class="table-cell">5</td>
+                                            <td class="table-cell">影像测头探测误差 (P<sub>V</sub>)</td>
+                                            <td class="table-cell" id="summary_pv">-</td>
+                                        </tr>
+                                        <tr class="border-b">
+                                            <td class="table-cell">6</td>
+                                            <td class="table-cell">二维探测误差 (P<sub>2D</sub>)</td>
+                                            <td class="table-cell" id="summary_p2d">-</td>
+                                        </tr>
+                                        <tr class="border-b">
+                                            <td class="table-cell">7</td>
+                                            <td class="table-cell">变倍探测误差 (P<sub>Z</sub>)</td>
+                                            <td class="table-cell" id="summary_pz">-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div id="finalResult" class="p-6 rounded-lg border-2">
+                            <div class="flex items-center justify-center">
+                                <i class="fa text-4xl mr-4"></i>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold mb-2">最终判定</p>
+                                    <p id="finalResultText" class="text-lg"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 导航按钮 -->
+                <div class="flex justify-between mt-8">
+                    <button id="prevBtn" class="btn btn-secondary" onclick="prevStep()">
+                        <i class="fa fa-arrow-left mr-2"></i>上一步
+                    </button>
+                    <button id="nextBtn" class="btn btn-primary" onclick="nextStep()">
+                        下一步<i class="fa fa-arrow-right ml-2"></i>
+                    </button>
+                    <button id="generateReportBtn" class="btn btn-success hidden" onclick="generateReport()">
+                        <i class="fa fa-file-text-o mr-2"></i>生成报告
+                    </button>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 打印报告区域 -->
+    <div id="printReport" class="print-only">
+        <!-- 报告内容将通过JS动态生成 -->
+    </div>
+
+    <script>
+        // 全局数据存储
+        const verificationData = {
+            basicInfo: {},
+            appearance: {},
+            exy: { x: [], y: [] },
+            ez: [],
+            ev: [],
+            pv: [],
+            p2d: [],
+            pz: {}
+        };
+        
+        let currentStep = 1;
+        let exyChartInstance = null;
+        
+        let pvChartInstance = null;
+        let p2dChartInstance = null;
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置默认日期为今天
+            document.getElementById('checkDate').valueAsDate = new Date();
+            
+            // 初始化各项表格
+            initEXYTables();
+            initPVTable();
+            initP2DTable();
+            
+            // 绑定外观检查事件
+            ['check1', 'check2', 'check3', 'check4'].forEach(id => {
+                document.getElementById(id).addEventListener('change', updateAppearanceResult);
+            });
+            
+            // 绑定步骤导航点击事件
+            document.querySelectorAll('.step-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const targetStep = parseInt(this.dataset.step);
+                    if (targetStep <= currentStep || this.classList.contains('completed')) {
+                        goToStep(targetStep);
+                    }
+                });
+            });
+        });
+        
+        // 初始化 EXY 表格
+        function initEXYTables() {
+            const standards = [4, 8, 12, 16, 20];
+            const xTableBody = document.getElementById('exyXTable');
+            const yTableBody = document.getElementById('exyYTable');
+            
+            standards.forEach((std, index) => {
+                // X方向
+                const xRow = document.createElement('tr');
+                xRow.className = 'border-b';
+                xRow.innerHTML = `
+                    <td class="table-cell font-medium">${std}</td>
+                    <td class="table-cell"><input type="number" step="0.001" id="exy_x_${index}_1" class="input-field text-sm" oninput="calculateEXYRow('x', ${index})"></td>
+                    <td class="table-cell"><input type="number" step="0.001" id="exy_x_${index}_2" class="input-field text-sm" oninput="calculateEXYRow('x', ${index})"></td>
+                    <td class="table-cell"><input type="number" step="0.001" id="exy_x_${index}_3" class="input-field text-sm" oninput="calculateEXYRow('x', ${index})"></td>
+                    <td class="table-cell font-medium" id="exy_x_${index}_avg">-</td>
+                    <td class="table-cell" id="exy_x_${index}_error">-</td>
+                    <td class="table-cell" id="exy_x_${index}_repeat">-</td>
+                    <td class="table-cell" id="exy_x_${index}_result">-</td>
+                `;
+                xTableBody.appendChild(xRow);
+                
+                // Y方向
+                const yRow = document.createElement('tr');
+                yRow.className = 'border-b';
+                yRow.innerHTML = `
+                    <td class="table-cell font-medium">${std}</td>
+                    <td class="table-cell"><input type="number" step="0.001" id="exy_y_${index}_1" class="input-field text-sm" oninput="calculateEXYRow('y', ${index})"></td>
+                    <td class="table-cell"><input type="number" step="0.001" id="exy_y_${index}_2" class="input-field text-sm" oninput="calculateEXYRow('y', ${index})"></td>
+                    <td class="table-cell"><input type="number" step="0.001" id="exy_y_${index}_3" class="input-field text-sm" oninput="calculateEXYRow('y', ${index})"></td>
+                    <td class="table-cell font-medium" id="exy_y_${index}_avg">-</td>
+                    <td class="table-cell" id="exy_y_${index}_error">-</td>
+                    <td class="table-cell" id="exy_y_${index}_repeat">-</td>
+                    <td class="table-cell" id="exy_y_${index}_result">-</td>
+                `;
+                yTableBody.appendChild(yRow);
+            });
+        }
+        
+        // 计算 EXY 单行数据
+        function calculateEXYRow(direction, index) {
+            const standards = [4, 8, 12, 16, 20];
+            const std = standards[index];
+            
+            const v1_um = parseFloat(document.getElementById(`exy_${direction}_${index}_1`).value);
+            const v2_um = parseFloat(document.getElementById(`exy_${direction}_${index}_2`).value);
+            const v3_um = parseFloat(document.getElementById(`exy_${direction}_${index}_3`).value);
+            
+            if (isNaN(v1_um) || isNaN(v2_um) || isNaN(v3_um)) {
+                return;
+            }
+            
+            // 将 μm 转换为 mm（除以 1000）
+            const v1 = v1_um / 1000;
+            const v2 = v2_um / 1000;
+            const v3 = v3_um / 1000;
+            
+            // 计算平均值（mm）
+            const avg = (v1 + v2 + v3) / 3;
+            document.getElementById(`exy_${direction}_${index}_avg`).textContent = avg.toFixed(3);
+            
+            // 计算示值误差（mm）
+            const error = avg - std;
+            document.getElementById(`exy_${direction}_${index}_error`).textContent = error.toFixed(3);
+            
+            // 计算重复性（mm）
+            const max = Math.max(v1, v2, v3);
+            const min = Math.min(v1, v2, v3);
+            const repeatability = max - min;
+            document.getElementById(`exy_${direction}_${index}_repeat`).textContent = repeatability.toFixed(3);
+            
+            // 判定
+            const mpe = 0.01 * std;  // 1% × L
+            const mpeR = 0.0033 * std;  // 0.33% × L
+            
+            const errorPass = Math.abs(error) <= mpe;
+            const repeatPass = repeatability <= mpeR;
+            const pass = errorPass && repeatPass;
+            
+            const resultCell = document.getElementById(`exy_${direction}_${index}_result`);
+            if (pass) {
+                resultCell.innerHTML = '<span class="text-success">✓ 合格</span>';
+            } else {
+                resultCell.innerHTML = '<span class="text-danger">✗ 不合格</span>';
+            }
+            
+            // 更新整体判定
+            updateEXYResult();
+        }
+        
+        // 更新 EXY 整体判定
+        function updateEXYResult() {
+            const standards = [4, 8, 12, 16, 20];
+            let allPass = true;
+            
+            for (let direction of ['x', 'y']) {
+                for (let i = 0; i < standards.length; i++) {
+                    const v1 = parseFloat(document.getElementById(`exy_${direction}_${i}_1`).value);
+                    const v2 = parseFloat(document.getElementById(`exy_${direction}_${i}_2`).value);
+                    const v3 = parseFloat(document.getElementById(`exy_${direction}_${i}_3`).value);
+                    
+                    if (isNaN(v1) || isNaN(v2) || isNaN(v3)) {
+                        return;  // 数据不完整，不显示结果
+                    }
+                    
+                    const resultText = document.getElementById(`exy_${direction}_${i}_result`).textContent;
+                    if (resultText.includes('不合格')) {
+                        allPass = false;
+                    }
+                }
+            }
+            
+            const resultDiv = document.getElementById('exyResult');
+            const resultText = document.getElementById('exyResultText');
+            const icon = resultDiv.querySelector('.fa');
+            
+            resultDiv.classList.remove('hidden');
+            
+            if (allPass) {
+                resultDiv.className = 'mt-6 p-4 rounded-lg bg-success/10 border border-success';
+                icon.className = 'fa fa-check-circle text-success text-2xl mr-3';
+                resultText.textContent = 'X、Y方向所有间隔均合格';
+            } else {
+                resultDiv.className = 'mt-6 p-4 rounded-lg bg-danger/10 border border-danger';
+                icon.className = 'fa fa-times-circle text-danger text-2xl mr-3';
+                resultText.textContent = '存在不合格项，请检查测量数据';
+            }
+            
+            // 更新图表
+            updateEXYChart();
+        }
+        
+        // 更新 EXY 图表
+        function updateEXYChart() {
+            const standards = [4, 8, 12, 16, 20];
+            const xErrors = [];
+            const yErrors = [];
+            
+            for (let i = 0; i < standards.length; i++) {
+                const xAvg = document.getElementById(`exy_x_${i}_avg`).textContent;
+                const yAvg = document.getElementById(`exy_y_${i}_avg`).textContent;
+                
+                if (xAvg !== '-') {
+                    xErrors.push(parseFloat(document.getElementById(`exy_x_${i}_error`).textContent));
+                }
+                if (yAvg !== '-') {
+                    yErrors.push(parseFloat(document.getElementById(`exy_y_${i}_error`).textContent));
+                }
+            }
+            
+            const ctx = document.getElementById('exyChart').getContext('2d');
+            
+            if (exyChartInstance) {
+                exyChartInstance.destroy();
+            }
+            
+            exyChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: standards.map(s => s + 'mm'),
+                    datasets: [
+                        {
+                            label: 'X方向示值误差',
+                            data: xErrors,
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Y方向示值误差',
+                            data: yErrors,
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: '示值误差 (mm)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 加载 EXY 演示数据（生成 μm 值）
+        function loadDemoDataEXY(direction) {
+            const standards = [4, 8, 12, 16, 20]; // mm
+            standards.forEach((std, index) => {
+                // 将 mm 转为 μm（乘以 1000），并加入随机偏差
+                const base_um = std * 1000 + (Math.random() - 0.5) * 20;
+                document.getElementById(`exy_${direction}_${index}_1`).value = base_um.toFixed(1);
+                document.getElementById(`exy_${direction}_${index}_2`).value = (base_um + (Math.random() - 0.5) * 10).toFixed(1);
+                document.getElementById(`exy_${direction}_${index}_3`).value = (base_um + (Math.random() - 0.5) * 10).toFixed(1);
+                calculateEXYRow(direction, index);
+            });
+        }
+        
+        // 更新外观检查结果
+        function updateAppearanceResult() {
+            const check1 = document.getElementById('check1').checked;
+            const check2 = document.getElementById('check2').checked;
+            const check3 = document.getElementById('check3').checked;
+            const check4 = document.getElementById('check4').checked;
+            
+            const allChecked = check1 && check2 && check3 && check4;
+            
+            const resultDiv = document.getElementById('appearanceResult');
+            const resultText = document.getElementById('appearanceResultText');
+            const icon = resultDiv.querySelector('.fa');
+            
+            resultDiv.classList.remove('hidden');
+            
+            if (allChecked) {
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-success/10 border border-success';
+                icon.className = 'fa fa-check-circle text-success text-2xl mr-3';
+                resultText.textContent = '外观与功能性检查合格';
+            } else {
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-danger/10 border border-danger';
+                icon.className = 'fa fa-times-circle text-danger text-2xl mr-3';
+                resultText.textContent = '外观与功能性检查不合格，请检查未通过的项目';
+            }
+        }
+        
+        // 步骤导航
+        function goToStep(step) {
+            // 隐藏所有步骤
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 显示目标步骤
+            document.getElementById(`step${step}`).classList.add('active');
+            
+            // 更新导航状态
+            document.querySelectorAll('.step-item').forEach(item => {
+                item.classList.remove('active');
+                const itemStep = parseInt(item.dataset.step);
+                if (itemStep === step) {
+                    item.classList.add('active');
+                } else if (itemStep < step) {
+                    item.classList.add('completed');
+                    item.classList.remove('pending');
+                }
+            });
+            
+            currentStep = step;
+            
+            // 更新按钮显示
+            document.getElementById('prevBtn').style.display = step === 1 ? 'none' : 'block';
+            document.getElementById('nextBtn').style.display = step === 9 ? 'none' : 'block';
+            document.getElementById('generateReportBtn').style.display = step === 9 ? 'block' : 'none';
+        }
+        
+        function prevStep() {
+            if (currentStep > 1) {
+                goToStep(currentStep - 1);
+            }
+        }
+        
+        function nextStep() {
+            // 验证当前步骤
+            if (!validateCurrentStep()) {
+                return;
+            }
+            
+            if (currentStep < 9) {
+                goToStep(currentStep + 1);
+            }
+        }
+        
+        function validateCurrentStep() {
+            if (currentStep === 1) {
+                // 验证基本信息
+                const required = ['deviceModel', 'deviceNumber', 'checkDate', 'temperature', 'humidity', 'operator', 'reviewer'];
+                for (let id of required) {
+                    const element = document.getElementById(id);
+                    if (!element.value) {
+                        alert('请填写所有必填项（标记 * 的字段）');
+                        element.focus();
+                        return false;
+                    }
+                }
+                
+                // 验证温度范围
+                const temp = parseFloat(document.getElementById('temperature').value);
+                if (temp < 10 || temp > 30) {
+                    alert('温度应在10~30℃范围内');
+                    return false;
+                }
+                
+                // 验证湿度范围
+                const humidity = parseFloat(document.getElementById('humidity').value);
+                if (humidity < 15 || humidity > 70) {
+                    alert('湿度应在15%~70%范围内');
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // ==================== EZ 计算函数 ====================
+        function calculateEZ() {
+            const representatives = [];
+            
+            for (let i = 1; i <= 3; i++) {
+                const center_um = parseFloat(document.getElementById(`ez_${i}_center`).value);
+                const end1_um = parseFloat(document.getElementById(`ez_${i}_end1`).value);
+                const end2_um = parseFloat(document.getElementById(`ez_${i}_end2`).value);
+                
+                if (isNaN(center_um) || isNaN(end1_um) || isNaN(end2_um)) {
+                    return;
+                }
+                
+                // 将 μm 转换为 mm（除以 1000）
+                const center = center_um / 1000;
+                const end1 = end1_um / 1000;
+                const end2 = end2_um / 1000;
+                
+                // 计算代表值（3点平均，单位 mm）
+                const representative = (center + end1 + end2) / 3;
+                representatives.push(representative);
+                document.getElementById(`ez_${i}_avg`).textContent = representative.toFixed(4);
+            }
+            
+            // 计算总平均值（mm）
+            const totalAvg = representatives.reduce((a, b) => a + b, 0) / 3;
+            document.getElementById('ez_total_avg').textContent = totalAvg.toFixed(4);
+            
+            // 计算示值误差（mm）
+            const error = totalAvg - 1.000;
+            document.getElementById('ez_error').textContent = error.toFixed(4);
+            
+            // 计算重复性（mm，3个代表值的极差）
+            const maxRep = Math.max(...representatives);
+            const minRep = Math.min(...representatives);
+            const repeatability = maxRep - minRep;
+            document.getElementById('ez_repeatability').textContent = repeatability.toFixed(4);
+            
+            // 判定
+            const mpe = 0.01;  // 1% × 1mm = 0.01mm
+            const mpeR = 0.0033;  // 0.33% × 1mm = 0.0033mm
+            
+            const errorPass = Math.abs(error) <= mpe;
+            const repeatPass = repeatability <= mpeR;
+            const pass = errorPass && repeatPass;
+            
+            const resultDiv = document.getElementById('ezResult');
+            const resultText = document.getElementById('ezResultText');
+            const icon = resultDiv.querySelector('.fa');
+            
+            resultDiv.classList.remove('hidden');
+            
+            if (pass) {
+                resultDiv.className = 'mt-6 p-4 rounded-lg bg-success/10 border border-success';
+                icon.className = 'fa fa-check-circle text-success text-2xl mr-3';
+                resultText.textContent = `合格 - 示值误差: ${error.toFixed(4)}mm (≤±${mpe}mm)，重复性: ${repeatability.toFixed(4)}mm (≤${mpeR}mm)`;
+            } else {
+                resultDiv.className = 'mt-6 p-4 rounded-lg bg-danger/10 border border-danger';
+                icon.className = 'fa fa-times-circle text-danger text-2xl mr-3';
+                resultText.textContent = '不合格：' + (!errorPass ? '示值误差超标 ' : '') + (!repeatPass ? '重复性超标' : '');
+            }
+        }
+        
+        function loadDemoDataEZ() {
+            // 标准值 1mm = 1000μm，生成 μm 值
+            const baseValue_um = 1000 + (Math.random() - 0.5) * 5;
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`ez_${i}_center`).value = (baseValue_um + (Math.random() - 0.5) * 2).toFixed(1);
+                document.getElementById(`ez_${i}_end1`).value = (baseValue_um + (Math.random() - 0.5) * 2).toFixed(1);
+                document.getElementById(`ez_${i}_end2`).value = (baseValue_um + (Math.random() - 0.5) * 2).toFixed(1);
+            }
+            calculateEZ();
+        }
+        
+        // ==================== EV 计算函数 ====================
+        function calculateEV() {
+            const standard = parseFloat(document.getElementById('ev_standard').value); // mm
+            const v1_um = parseFloat(document.getElementById('ev_1').value);
+            const v2_um = parseFloat(document.getElementById('ev_2').value);
+            const v3_um = parseFloat(document.getElementById('ev_3').value);
+            
+            if (isNaN(standard) || isNaN(v1_um) || isNaN(v2_um) || isNaN(v3_um)) {
+                return;
+            }
+            
+            // 将 μm 转换为 mm（除以 1000）
+            const v1 = v1_um / 1000;
+            const v2 = v2_um / 1000;
+            const v3 = v3_um / 1000;
+            
+            // 计算平均值（mm）
+            const avg = (v1 + v2 + v3) / 3;
+            document.getElementById('ev_avg').textContent = avg.toFixed(4);
+            
+            // 计算示值误差（mm）
+            const error = avg - standard;
+            document.getElementById('ev_error').textContent = error.toFixed(4);
+            
+            // 计算重复性（mm）
+            const max = Math.max(v1, v2, v3);
+            const min = Math.min(v1, v2, v3);
+            const repeatability = max - min;
+            document.getElementById('ev_repeatability').textContent = repeatability.toFixed(4);
+            
+            // 判定
+            const mpe = 0.01 * standard;  // 1% × L
+            const mpeR = 0.0033 * standard;  // 0.33% × L
+            
+            const errorPass = Math.abs(error) <= mpe;
+            const repeatPass = repeatability <= mpeR;
+            const pass = errorPass && repeatPass;
+            
+            const resultDiv = document.getElementById('evResult');
+            const resultText = document.getElementById('evResultText');
+            const icon = resultDiv.querySelector('.fa');
+            
+            resultDiv.classList.remove('hidden');
+            
+            if (pass) {
+                resultDiv.className = 'mt-6 p-4 rounded-lg bg-success/10 border border-success';
+                icon.className = 'fa fa-check-circle text-success text-2xl mr-3';
+                resultText.textContent = `合格 - 示值误差: ${error.toFixed(4)}mm (≤±${mpe.toFixed(4)}mm)，重复性: ${repeatability.toFixed(4)}mm (≤${mpeR.toFixed(4)}mm)`;
+            } else {
+                resultDiv.className = 'mt-6 p-4 rounded-lg bg-danger/10 border border-danger';
+                icon.className = 'fa fa-times-circle text-danger text-2xl mr-3';
+                resultText.textContent = '不合格：' + (!errorPass ? '示值误差超标 ' : '') + (!repeatPass ? '重复性超标' : '');
+            }
+        }
+        
+        function loadDemoDataEV() {
+            const standard = 0.6; // mm
+            document.getElementById('ev_standard').value = standard;
+            // 将 mm 转为 μm（乘以 1000），并加入随机偏差
+            const baseValue_um = standard * 1000 + (Math.random() - 0.5) * 3;
+            document.getElementById('ev_1').value = (baseValue_um + (Math.random() - 0.5) * 1).toFixed(1);
+            document.getElementById('ev_2').value = (baseValue_um + (Math.random() - 0.5) * 1).toFixed(1);
+            document.getElementById('ev_3').value = (baseValue_um + (Math.random() - 0.5) * 1).toFixed(1);
+            calculateEV();
+        }
+        
+        // ==================== PV/P2D 初始化表格 ====================
+        function initPVTable() {
+            const tbody = document.getElementById('pvTable');
+            for (let i = 0; i < 15; i++) {
+                const row = document.createElement('tr');
+                row.className = 'border-b';
+                row.innerHTML = `
+                    <td class="table-cell font-medium">${i + 1}</td>
+                    <td class="table-cell"><input type="number" step="any" id="pv_x_${i}" class="input-field text-sm"></td>
+                    <td class="table-cell"><input type="number" step="any" id="pv_y_${i}" class="input-field text-sm"></td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+        
+        function initP2DTable() {
+            const tbody = document.getElementById('p2dTable');
+            for (let i = 0; i < 25; i++) {
+                const row = document.createElement('tr');
+                row.className = 'border-b';
+                row.innerHTML = `
+                    <td class="table-cell font-medium">${i + 1}</td>
+                    <td class="table-cell"><input type="number" step="any" id="p2d_x_${i}" class="input-field text-sm"></td>
+                    <td class="table-cell"><input type="number" step="any" id="p2d_y_${i}" class="input-field text-sm"></td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+        
+        // ==================== 最小二乘圆拟合算法 ====================
+        function leastSquaresCircleFit(points) {
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+            let sumX3 = 0, sumY3 = 0, sumX2Y = 0, sumXY2 = 0;
+            
+            for (const point of points) {
+                const x = point.x;
+                const y = point.y;
+                const x2 = x * x;
+                const y2 = y * y;
+                
+                sumX += x;
+                sumY += y;
+                sumXY += x * y;
+                sumX2 += x2;
+                sumY2 += y2;
+                sumX3 += x * x2;
+                sumY3 += y * y2;
+                sumX2Y += x2 * y;
+                sumXY2 += x * y2;
+            }
+            
+            const n = points.length;
+            
+            const A = n * sumX2 - sumX * sumX;
+            const B = n * sumXY - sumX * sumY;
+            const C = n * sumY2 - sumY * sumY;
+            const D = 0.5 * (n * (sumX3 + sumXY2) - sumX * (sumX2 + sumY2));
+            const E = 0.5 * (n * (sumY3 + sumX2Y) - sumY * (sumX2 + sumY2));
+            
+            const denominator = A * C - B * B;
+            
+            if (Math.abs(denominator) < 1e-10) {
+                throw new Error("无法拟合圆：点可能近似共线");
+            }
+            
+            const centerX = (D * C - B * E) / denominator;
+            const centerY = (A * E - B * D) / denominator;
+            
+            let sumR2 = 0;
+            const distances = [];
+            for (const point of points) {
+                const dx = point.x - centerX;
+                const dy = point.y - centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                distances.push(distance);
+                sumR2 += dx * dx + dy * dy;
+            }
+            const radius = Math.sqrt(sumR2 / n);
+            
+            return { centerX, centerY, radius, distances };
+        }
+        
+        // ==================== PV 计算函数 ====================
+        function calculatePV() {
+            const points = [];
+            for (let i = 0; i < 15; i++) {
+                const x = parseFloat(document.getElementById(`pv_x_${i}`).value);
+                const y = parseFloat(document.getElementById(`pv_y_${i}`).value);
+                
+                if (isNaN(x) || isNaN(y)) {
+                    alert(`请填写所有测量点的坐标值`);
+                    return;
+                }
+                points.push({ x, y });
+            }
+            
+            try {
+                const result = leastSquaresCircleFit(points);
+                
+                document.getElementById('pv_center_x').textContent = result.centerX.toFixed(3);
+                document.getElementById('pv_center_y').textContent = result.centerY.toFixed(3);
+                document.getElementById('pv_radius').textContent = result.radius.toFixed(3);
+                
+                const maxR = Math.max(...result.distances);
+                const minR = Math.min(...result.distances);
+                const pv = maxR - minR;
+                
+                document.getElementById('pv_error').textContent = pv.toFixed(2);
+                document.getElementById('pvResults').classList.remove('hidden');
+                
+                // 判定
+                const pass = pv <= 10;
+                const resultDiv = document.getElementById('pvResult');
+                const resultText = document.getElementById('pvResultText');
+                const icon = resultDiv.querySelector('.fa');
+                
+                resultDiv.classList.remove('hidden');
+                
+                if (pass) {
+                    resultDiv.className = 'p-4 rounded-lg bg-success/10 border border-success';
+                    icon.className = 'fa fa-check-circle text-success text-2xl mr-3';
+                    resultText.innerHTML = `P<sub>V</sub> = ${pv.toFixed(2)}μm ≤ 10μm，合格`;
+                } else {
+                    resultDiv.className = 'p-4 rounded-lg bg-danger/10 border border-danger';
+                    icon.className = 'fa fa-times-circle text-danger text-2xl mr-3';
+                    resultText.innerHTML = `P<sub>V</sub> = ${pv.toFixed(2)}μm > 10μm，不合格`;
+                }
+                
+                // 绘制图表
+                drawCircleChart('pvChart', points, result, 'pvChartInstance');
+                
+            } catch (error) {
+                alert(`计算出错: ${error.message}`);
+            }
+        }
+        
+        function loadDemoDataPV() {
+            const centerX = 650;
+            const centerY = 620;
+            const radius = 450;
+            
+            for (let i = 0; i < 15; i++) {
+                const angle = (i / 15) * 2 * Math.PI;
+                const error = (Math.random() - 0.5) * 6;
+                const actualRadius = radius + error;
+                
+                const x = centerX + actualRadius * Math.cos(angle);
+                const y = centerY + actualRadius * Math.sin(angle);
+                
+                document.getElementById(`pv_x_${i}`).value = x.toFixed(4);
+                document.getElementById(`pv_y_${i}`).value = y.toFixed(4);
+            }
+            calculatePV();
+        }
+        
+        // ==================== P2D 计算函数 ====================
+        function calculateP2D() {
+            const points = [];
+            for (let i = 0; i < 25; i++) {
+                const x = parseFloat(document.getElementById(`p2d_x_${i}`).value);
+                const y = parseFloat(document.getElementById(`p2d_y_${i}`).value);
+                
+                if (isNaN(x) || isNaN(y)) {
+                    alert(`请填写所有测量点的坐标值`);
+                    return;
+                }
+                points.push({ x, y });
+            }
+            
+            try {
+                const result = leastSquaresCircleFit(points);
+                
+                document.getElementById('p2d_center_x').textContent = result.centerX.toFixed(3);
+                document.getElementById('p2d_center_y').textContent = result.centerY.toFixed(3);
+                document.getElementById('p2d_radius').textContent = result.radius.toFixed(3);
+                
+                const maxR = Math.max(...result.distances);
+                const minR = Math.min(...result.distances);
+                const p2d = maxR - minR;
+                
+                document.getElementById('p2d_error').textContent = p2d.toFixed(2);
+                document.getElementById('p2dResults').classList.remove('hidden');
+                
+                // 判定
+                const pass = p2d <= 10;
+                const resultDiv = document.getElementById('p2dResult');
+                const resultText = document.getElementById('p2dResultText');
+                const icon = resultDiv.querySelector('.fa');
+                
+                resultDiv.classList.remove('hidden');
+                
+                if (pass) {
+                    resultDiv.className = 'p-4 rounded-lg bg-success/10 border border-success';
+                    icon.className = 'fa fa-check-circle text-success text-2xl mr-3';
+                    resultText.innerHTML = `P<sub>2D</sub> = ${p2d.toFixed(2)}μm ≤ 10μm，合格`;
+                } else {
+                    resultDiv.className = 'p-4 rounded-lg bg-danger/10 border border-danger';
+                    icon.className = 'fa fa-times-circle text-danger text-2xl mr-3';
+                    resultText.innerHTML = `P<sub>2D</sub> = ${p2d.toFixed(2)}μm > 10μm，不合格`;
+                }
+                
+                // 绘制图表
+                drawCircleChart('p2dChart', points, result, 'p2dChartInstance');
+                
+            } catch (error) {
+                alert(`计算出错: ${error.message}`);
+            }
+        }
+        
+        function loadDemoDataP2D() {
+            const centerX = 580;
+            const centerY = 550;
+            const radius = 380;
+            
+            for (let i = 0; i < 25; i++) {
+                const angle = (i / 25) * 2 * Math.PI;
+                const error = (Math.random() - 0.5) * 8;
+                const actualRadius = radius + error;
+                
+                const x = centerX + actualRadius * Math.cos(angle);
+                const y = centerY + actualRadius * Math.sin(angle);
+                
+                document.getElementById(`p2d_x_${i}`).value = x.toFixed(4);
+                document.getElementById(`p2d_y_${i}`).value = y.toFixed(4);
+            }
+            calculateP2D();
+        }
+        
+        // ==================== 圆拟合图表绘制 ====================
+        function drawCircleChart(canvasId, points, result, instanceName) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            if (window[instanceName]) {
+                window[instanceName].destroy();
+            }
+            
+            const circlePoints = [];
+            const segments = 100;
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * 2 * Math.PI;
+                circlePoints.push({
+                    x: result.centerX + result.radius * Math.cos(angle),
+                    y: result.centerY + result.radius * Math.sin(angle)
+                });
+            }
+            
+            const chartRadius = result.radius * 1.2;
+            
+            window[instanceName] = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: '测量点',
+                            data: points,
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            borderWidth: 1,
+                            pointRadius: 5
+                        },
+                        {
+                            label: '圆心',
+                            data: [{ x: result.centerX, y: result.centerY }],
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderColor: 'rgba(5, 150, 105, 1)',
+                            borderWidth: 2,
+                            pointRadius: 6
+                        },
+                        {
+                            label: '拟合圆',
+                            data: circlePoints,
+                            type: 'line',
+                            borderColor: 'rgba(59, 130, 246, 0.8)',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1,  // 确保x和y轴比例一致，圆显示为正圆
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            min: result.centerX - chartRadius,
+                            max: result.centerX + chartRadius,
+                            title: { display: true, text: 'X坐标' },
+                            ticks: {
+                                stepSize: chartRadius / 5  // 确保刻度间距一致
+                            }
+                        },
+                        y: {
+                            min: result.centerY - chartRadius,
+                            max: result.centerY + chartRadius,
+                            title: { display: true, text: 'Y坐标' },
+                            ticks: {
+                                stepSize: chartRadius / 5  // 与x轴刻度间距一致
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+        }
+        
+        // ==================== PZ 计算函数 ====================
+        function calculatePZ() {
+            const xValues = [
+                parseFloat(document.getElementById('pz_x_200').value),
+                parseFloat(document.getElementById('pz_x_150').value),
+                parseFloat(document.getElementById('pz_x_100').value)
+            ];
+            
+            const yValues = [
+                parseFloat(document.getElementById('pz_y_200').value),
+                parseFloat(document.getElementById('pz_y_150').value),
+                parseFloat(document.getElementById('pz_y_100').value)
+            ];
+            
+            if (xValues.some(isNaN) || yValues.some(isNaN)) {
+                return;
+            }
+            
+            const deltaX = Math.max(...xValues) - Math.min(...xValues);
+            const deltaY = Math.max(...yValues) - Math.min(...yValues);
+            const pz = Math.max(deltaX, deltaY);
+            
+            document.getElementById('pz_delta_x').textContent = deltaX.toFixed(2);
+            document.getElementById('pz_delta_y').textContent = deltaY.toFixed(2);
+            document.getElementById('pz_value').textContent = pz.toFixed(2);
+            
+            // 判定
+            const pass = pz <= 10;
+            const resultDiv = document.getElementById('pzResult');
+            const resultText = document.getElementById('pzResultText');
+            const icon = resultDiv.querySelector('.fa');
+            
+            resultDiv.classList.remove('hidden');
+            
+            if (pass) {
+                resultDiv.className = 'mt-6 p-4 rounded-lg bg-success/10 border border-success';
+                icon.className = 'fa fa-check-circle text-success text-2xl mr-3';
+                resultText.innerHTML = `P<sub>Z</sub> = ${pz.toFixed(2)}μm ≤ 10μm，合格`;
+            } else {
+                resultDiv.className = 'mt-6 p-4 rounded-lg bg-danger/10 border border-danger';
+                icon.className = 'fa fa-times-circle text-danger text-2xl mr-3';
+                resultText.innerHTML = `P<sub>Z</sub> = ${pz.toFixed(2)}μm > 10μm，不合格`;
+            }
+        }
+        
+        function loadDemoDataPZ() {
+            const baseX = 500;
+            const baseY = 600;
+            const spread = 6;
+            document.getElementById('pz_x_200').value = (baseX + (Math.random() - 0.5) * spread).toFixed(3);
+            document.getElementById('pz_x_150').value = (baseX + (Math.random() - 0.5) * spread).toFixed(3);
+            document.getElementById('pz_x_100').value = (baseX + (Math.random() - 0.5) * spread).toFixed(3);
+            document.getElementById('pz_y_200').value = (baseY + (Math.random() - 0.5) * spread).toFixed(3);
+            document.getElementById('pz_y_150').value = (baseY + (Math.random() - 0.5) * spread).toFixed(3);
+            document.getElementById('pz_y_100').value = (baseY + (Math.random() - 0.5) * spread).toFixed(3);
+            calculatePZ();
+        }
+        
+        // ==================== 报告生成函数 ====================
+        function generateReport() {
+            // 更新综合结果汇总
+            updateSummary();
+            
+            // 收集所有数据
+            const reportData = collectAllData();
+            
+            // 生成HTML报告
+            const reportHTML = buildReportHTML(reportData);
+            
+            // 显示报告并切换到打印视图
+            const printArea = document.getElementById('printReport');
+            printArea.innerHTML = reportHTML;
+            
+            // 添加预览和打印按钮
+            const controlBar = document.createElement('div');
+            controlBar.className = 'no-print fixed top-0 left-0 right-0 bg-white shadow-lg p-4 flex justify-center space-x-4 z-50';
+            controlBar.innerHTML = `
+                <button onclick="window.print()" class="btn btn-primary">
+                    <i class="fa fa-print mr-2"></i>打印报告
+                </button>
+                <button onclick="closeReport()" class="btn btn-secondary">
+                    <i class="fa fa-arrow-left mr-2"></i>返回编辑
+                </button>
+            `;
+            
+            document.getElementById('workArea').style.display = 'none';
+            printArea.classList.remove('print-only');
+            printArea.classList.add('block');
+            printArea.style.marginTop = '80px';
+            document.body.insertBefore(controlBar, document.body.firstChild);
+        }
+        
+        function closeReport() {
+            document.getElementById('workArea').style.display = 'block';
+            document.getElementById('printReport').classList.add('print-only');
+            document.getElementById('printReport').classList.remove('block');
+            document.getElementById('printReport').style.marginTop = '0';
+            
+            // 移除控制栏
+            const controlBar = document.querySelector('.no-print.fixed');
+            if (controlBar) {
+                controlBar.remove();
+            }
+        }
+        
+        function updateSummary() {
+            // 外观检查
+            const check1 = document.getElementById('check1').checked;
+            const check2 = document.getElementById('check2').checked;
+            const check3 = document.getElementById('check3').checked;
+            const check4 = document.getElementById('check4').checked;
+            const appearancePass = check1 && check2 && check3 && check4;
+            document.getElementById('summary_appearance').innerHTML = appearancePass ? 
+                '<span class="text-success font-medium">✓ 合格</span>' : '<span class="text-danger font-medium">✗ 不合格</span>';
+            
+            // 其他项目从判定结果中提取
+            updateSummaryItem('exy', 'exyResultText');
+            updateSummaryItem('ez', 'ezResultText');
+            updateSummaryItem('ev', 'evResultText');
+            updateSummaryItem('pv', 'pvResultText');
+            updateSummaryItem('p2d', 'p2dResultText');
+            updateSummaryItem('pz', 'pzResultText');
+            
+            // 更新最终判定
+            const allPass = appearancePass && 
+                            checkItemPass('exyResultText') &&
+                            checkItemPass('ezResultText') &&
+                            checkItemPass('evResultText') &&
+                            checkItemPass('pvResultText') &&
+                            checkItemPass('p2dResultText') &&
+                            checkItemPass('pzResultText');
+            
+            const finalDiv = document.getElementById('finalResult');
+            const finalText = document.getElementById('finalResultText');
+            const finalIcon = finalDiv.querySelector('.fa');
+            
+            if (allPass) {
+                finalDiv.className = 'p-6 rounded-lg border-2 bg-success/10 border-success';
+                finalIcon.className = 'fa fa-check-circle text-success text-4xl mr-4';
+                finalText.textContent = '期间核查合格';
+            } else {
+                finalDiv.className = 'p-6 rounded-lg border-2 bg-danger/10 border-danger';
+                finalIcon.className = 'fa fa-times-circle text-danger text-4xl mr-4';
+                finalText.textContent = '期间核查不合格';
+            }
+        }
+        
+        function updateSummaryItem(id, resultTextId) {
+            const resultText = document.getElementById(resultTextId);
+            if (!resultText || !resultText.textContent || resultText.textContent === '') {
+                document.getElementById(`summary_${id}`).innerHTML = '<span class="text-gray-500">-</span>';
+                return;
+            }
+            
+            const pass = resultText.textContent.includes('合格') && !resultText.textContent.includes('不合格');
+            document.getElementById(`summary_${id}`).innerHTML = pass ? 
+                '<span class="text-success font-medium">✓ 合格</span>' : '<span class="text-danger font-medium">✗ 不合格</span>';
+        }
+        
+        function checkItemPass(resultTextId) {
+            const resultText = document.getElementById(resultTextId);
+            if (!resultText || !resultText.textContent) return false;
+            return resultText.textContent.includes('合格') && !resultText.textContent.includes('不合格');
+        }
+        
+        function collectAllData() {
+            const data = {
+                basicInfo: {
+                    model: document.getElementById('deviceModel').value,
+                    number: document.getElementById('deviceNumber').value,
+                    serial: document.getElementById('serialNumber').value,
+                    date: document.getElementById('checkDate').value,
+                    type: document.getElementById('checkType').value,
+                    temperature: document.getElementById('temperature').value,
+                    humidity: document.getElementById('humidity').value,
+                    ruler: document.getElementById('rulerNumber').value,
+                    gauge: document.getElementById('gaugeNumber').value,
+                    target: document.getElementById('targetNumber').value,
+                    operator: document.getElementById('operator').value,
+                    reviewer: document.getElementById('reviewer').value
+                },
+                appearance: {
+                    check1: document.getElementById('check1').checked,
+                    check2: document.getElementById('check2').checked,
+                    check3: document.getElementById('check3').checked,
+                    check4: document.getElementById('check4').checked,
+                    notes: document.getElementById('appearanceNotes').value,
+                    result: document.getElementById('appearanceResultText').textContent
+                },
+                exy: { x: [], y: [] },
+                ez: [],
+                ev: {},
+                pv: [],
+                p2d: [],
+                pz: {}
+            };
+            
+            // 收集EXY数据
+            const standards = [4, 8, 12, 16, 20];
+            for (let i = 0; i < 5; i++) {
+                for (let dir of ['x', 'y']) {
+                    const v1 = document.getElementById(`exy_${dir}_${i}_1`).value;
+                    const v2 = document.getElementById(`exy_${dir}_${i}_2`).value;
+                    const v3 = document.getElementById(`exy_${dir}_${i}_3`).value;
+                    const avg = document.getElementById(`exy_${dir}_${i}_avg`).textContent;
+                    const error = document.getElementById(`exy_${dir}_${i}_error`).textContent;
+                    const repeat = document.getElementById(`exy_${dir}_${i}_repeat`).textContent;
+                    const result = document.getElementById(`exy_${dir}_${i}_result`).textContent;
+                    
+                    data.exy[dir].push({
+                        standard: standards[i],
+                        v1, v2, v3, avg, error, repeat, result
+                    });
+                }
+            }
+            
+            // 收集EZ数据
+            for (let i = 1; i <= 3; i++) {
+                const center = document.getElementById(`ez_${i}_center`).value;
+                const end1 = document.getElementById(`ez_${i}_end1`).value;
+                const end2 = document.getElementById(`ez_${i}_end2`).value;
+                const avg = document.getElementById(`ez_${i}_avg`).textContent;
+                data.ez.push({ center, end1, end2, avg });
+            }
+            data.ez.totalAvg = document.getElementById('ez_total_avg').textContent;
+            data.ez.error = document.getElementById('ez_error').textContent;
+            data.ez.repeatability = document.getElementById('ez_repeatability').textContent;
+            data.ez.result = document.getElementById('ezResultText').textContent;
+            
+            // 收集EV数据
+            data.ev.standard = document.getElementById('ev_standard').value;
+            data.ev.v1 = document.getElementById('ev_1').value;
+            data.ev.v2 = document.getElementById('ev_2').value;
+            data.ev.v3 = document.getElementById('ev_3').value;
+            data.ev.avg = document.getElementById('ev_avg').textContent;
+            data.ev.error = document.getElementById('ev_error').textContent;
+            data.ev.repeatability = document.getElementById('ev_repeatability').textContent;
+            data.ev.result = document.getElementById('evResultText').textContent;
+            
+            // 收集PV数据
+            for (let i = 0; i < 15; i++) {
+                const x = document.getElementById(`pv_x_${i}`).value;
+                const y = document.getElementById(`pv_y_${i}`).value;
+                if (x && y) {
+                    data.pv.push({ x, y });
+                }
+            }
+            data.pv.centerX = document.getElementById('pv_center_x').textContent;
+            data.pv.centerY = document.getElementById('pv_center_y').textContent;
+            data.pv.radius = document.getElementById('pv_radius').textContent;
+            data.pv.error = document.getElementById('pv_error').textContent;
+            data.pv.result = document.getElementById('pvResultText').textContent || document.getElementById('pvResultText').innerHTML;
+            
+            // 收集P2D数据
+            for (let i = 0; i < 25; i++) {
+                const x = document.getElementById(`p2d_x_${i}`).value;
+                const y = document.getElementById(`p2d_y_${i}`).value;
+                if (x && y) {
+                    data.p2d.push({ x, y });
+                }
+            }
+            data.p2d.centerX = document.getElementById('p2d_center_x').textContent;
+            data.p2d.centerY = document.getElementById('p2d_center_y').textContent;
+            data.p2d.radius = document.getElementById('p2d_radius').textContent;
+            data.p2d.error = document.getElementById('p2d_error').textContent;
+            data.p2d.result = document.getElementById('p2dResultText').textContent || document.getElementById('p2dResultText').innerHTML;
+            
+            // 收集PZ数据
+            data.pz.x200 = document.getElementById('pz_x_200').value;
+            data.pz.x150 = document.getElementById('pz_x_150').value;
+            data.pz.x100 = document.getElementById('pz_x_100').value;
+            data.pz.y200 = document.getElementById('pz_y_200').value;
+            data.pz.y150 = document.getElementById('pz_y_150').value;
+            data.pz.y100 = document.getElementById('pz_y_100').value;
+            data.pz.deltaX = document.getElementById('pz_delta_x').textContent;
+            data.pz.deltaY = document.getElementById('pz_delta_y').textContent;
+            data.pz.value = document.getElementById('pz_value').textContent;
+            data.pz.result = document.getElementById('pzResultText').textContent || document.getElementById('pzResultText').innerHTML;
+            
+            return data;
+        }
+        
+        function buildReportHTML(data) {
+            const finalResultText = document.getElementById('finalResultText').textContent;
+            const finalResult = document.getElementById('finalResult');
+            const isFinalPass = finalResult.className.includes('success');
+            
+            return `
+                <style>
+                    @page { margin: 1.5cm; size: A4; }
+                    .report-page { font-size: 11px; line-height: 1.3; }
+                    .report-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 10px; }
+                    .report-table th, .report-table td { border: 1px solid #000; padding: 3px 5px; }
+                    .report-table th { background-color: #f0f0f0; font-weight: bold; text-align: center; }
+                    .report-title { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 12px; }
+                    .section-title { font-size: 13px; font-weight: bold; margin: 10px 0 5px 0; border-bottom: 2px solid #000; padding-bottom: 2px; }
+                    .compact-row td { padding: 2px 4px !important; }
+                </style>
+                <div class="report-page" style="max-width: 21cm; margin: 0 auto; background: white; padding: 1cm;">
+                    
+                    <!-- 第1页 -->
+                    <div class="page-break-avoid">
+                        <div style="text-align: center; margin-bottom: 6px;"><img src="logo.png" alt="机构Logo" style="height: 28px; object-fit: contain;"></div>
+                        <div style="text-align: center; margin-bottom: 8px; font-size: 11px; color: #333;">新疆中和鉴珠宝玉石质量检测研究所</div>
+                        <h1 class="report-title">超景深显微镜期间核查原始记录</h1>
+                        <div style="text-align: center; margin-bottom: 15px; font-size: 12px;">
+                            <span>仪器型号：${data.basicInfo.model}</span> &nbsp;&nbsp;
+                            <span>仪器编号：${data.basicInfo.number}</span> &nbsp;&nbsp;
+                            <span>核查日期：${data.basicInfo.date}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="page-break-avoid">
+                        <h2 class="section-title">一、基本信息</h2>
+                        <table class="report-table">
+                            <tr>
+                                <td style="background-color: #f9fafb; width: 20%; font-weight: bold;">核查类型</td>
+                                <td style="width: 30%;">${data.basicInfo.type}</td>
+                                <td style="background-color: #f9fafb; width: 20%; font-weight: bold;">环境温度</td>
+                                <td style="width: 30%;">${data.basicInfo.temperature}℃</td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; font-weight: bold;">相对湿度</td>
+                                <td>${data.basicInfo.humidity}%</td>
+                                <td style="background-color: #f9fafb; font-weight: bold;">玻璃刻度尺</td>
+                                <td>${data.basicInfo.ruler || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; font-weight: bold;">量块编号</td>
+                                <td>${data.basicInfo.gauge || '-'}</td>
+                                <td style="background-color: #f9fafb; font-weight: bold;">圆靶标编号</td>
+                                <td>${data.basicInfo.target || '-'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="page-break-avoid">
+                        <h2 class="section-title">二、外观与功能性检查</h2>
+                        <table class="report-table">
+                            <tr>
+                                <td style="width: 60%;">1. 载物台运动正常，无卡顿或异响</td>
+                                <td style="text-align: center;">${data.appearance.check1 ? '☑' : '☐'}</td>
+                            </tr>
+                            <tr>
+                                <td>2. 镜头清洁，无明显污渍或划痕</td>
+                                <td style="text-align: center;">${data.appearance.check2 ? '☑' : '☐'}</td>
+                            </tr>
+                            <tr>
+                                <td>3. 光源稳定，亮度均匀</td>
+                                <td style="text-align: center;">${data.appearance.check3 ? '☑' : '☐'}</td>
+                            </tr>
+                            <tr>
+                                <td>4. 软件功能正常，可正常拼接和测量</td>
+                                <td style="text-align: center;">${data.appearance.check4 ? '☑' : '☐'}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2"><strong>备注：</strong>${data.appearance.notes || '无'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="page-break-avoid">
+                        <h2 class="section-title">三、平面尺寸测量误差 (E<sub>XY</sub>)</h2>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">方向</th>
+                                    <th rowspan="2">标准值<br/>(mm)</th>
+                                    <th colspan="3">测量值 (mm)</th>
+                                    <th rowspan="2">平均值<br/>(mm)</th>
+                                    <th rowspan="2">示值误差<br/>(mm)</th>
+                                    <th rowspan="2">重复性<br/>(mm)</th>
+                                    <th rowspan="2">判定</th>
+                                </tr>
+                                <tr>
+                                    <th>第1次</th>
+                                    <th>第2次</th>
+                                    <th>第3次</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.exy.x.map((item, i) => `
+                                    <tr class="compact-row">
+                                        ${i === 0 ? `<td rowspan="5" style="text-align: center; font-weight: bold;">X</td>` : ''}
+                                        <td style="text-align: center;">${item.standard}</td>
+                                        <td style="text-align: right;">${item.v1}</td>
+                                        <td style="text-align: right;">${item.v2}</td>
+                                        <td style="text-align: right;">${item.v3}</td>
+                                        <td style="text-align: right; font-weight: bold;">${item.avg}</td>
+                                        <td style="text-align: right;">${item.error}</td>
+                                        <td style="text-align: right;">${item.repeat}</td>
+                                        <td style="text-align: center; font-size: 9px;">${item.result}</td>
+                                    </tr>
+                                `).join('')}
+                                ${data.exy.y.map((item, i) => `
+                                    <tr class="compact-row">
+                                        ${i === 0 ? `<td rowspan="5" style="text-align: center; font-weight: bold;">Y</td>` : ''}
+                                        <td style="text-align: center;">${item.standard}</td>
+                                        <td style="text-align: right;">${item.v1}</td>
+                                        <td style="text-align: right;">${item.v2}</td>
+                                        <td style="text-align: right;">${item.v3}</td>
+                                        <td style="text-align: right; font-weight: bold;">${item.avg}</td>
+                                        <td style="text-align: right;">${item.error}</td>
+                                        <td style="text-align: right;">${item.repeat}</td>
+                                        <td style="text-align: center; font-size: 9px;">${item.result}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="page-break-avoid">
+                        <h2 class="section-title">四、垂直尺寸测量误差 (E<sub>Z</sub>)</h2>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>测量次数</th>
+                                    <th>中心点 (mm)</th>
+                                    <th>端点1 (mm)</th>
+                                    <th>端点2 (mm)</th>
+                                    <th>代表值 (mm)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.ez.map((item, i) => `
+                                    <tr>
+                                        <td style="text-align: center;">第${i+1}次</td>
+                                        <td style="text-align: right;">${item.center}</td>
+                                        <td style="text-align: right;">${item.end1}</td>
+                                        <td style="text-align: right;">${item.end2}</td>
+                                        <td style="text-align: right; font-weight: bold;">${item.avg}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        <p style="margin: 5px 0;"><strong>总平均值：</strong>${data.ez.totalAvg} mm &nbsp; <strong>示值误差：</strong>${data.ez.error} mm &nbsp; <strong>重复性：</strong>${data.ez.repeatability} mm</p>
+                        <p style="margin: 5px 0;"><strong>判定结果：</strong>${data.ez.result}</p>
+                    </div>
+                    
+                    <div class="page-break-avoid">
+                        <h2 class="section-title">五、影像测头尺寸测量误差 (E<sub>V</sub>)</h2>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>测量位置</th>
+                                    <th>测量值 (mm)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>位置1（上）</td><td style="text-align: right;">${data.ev.v1}</td></tr>
+                                <tr><td>位置2（中）</td><td style="text-align: right;">${data.ev.v2}</td></tr>
+                                <tr><td>位置3（下）</td><td style="text-align: right;">${data.ev.v3}</td></tr>
+                            </tbody>
+                        </table>
+                        <p style="margin: 5px 0;"><strong>标准值：</strong>${data.ev.standard} mm &nbsp; <strong>平均值：</strong>${data.ev.avg} mm &nbsp; <strong>示值误差：</strong>${data.ev.error} mm &nbsp; <strong>重复性：</strong>${data.ev.repeatability} mm</p>
+                        <p style="margin: 5px 0;"><strong>判定结果：</strong>${data.ev.result}</p>
+                    </div>
+                    
+                    <div class="page-break-avoid">
+                        <h2 class="section-title">六、影像测头探测误差 (P<sub>V</sub>)</h2>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 8%;">序号</th>
+                                    <th>X坐标</th>
+                                    <th>Y坐标</th>
+                                    <th style="width: 8%;">序号</th>
+                                    <th>X坐标</th>
+                                    <th>Y坐标</th>
+                                    <th style="width: 8%;">序号</th>
+                                    <th>X坐标</th>
+                                    <th>Y坐标</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Array(5).fill(0).map((_, rowIdx) => `
+                                    <tr class="compact-row">
+                                        ${[0, 1, 2].map(colIdx => {
+                                            const idx = rowIdx * 3 + colIdx;
+                                            if (idx >= data.pv.length) return '<td></td><td></td><td></td>';
+                                            return `<td style="text-align: center;">${idx + 1}</td>
+                                                    <td style="text-align: right;">${data.pv[idx].x}</td>
+                                                    <td style="text-align: right;">${data.pv[idx].y}</td>`;
+                                        }).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        <p style="margin: 5px 0;"><strong>圆心：</strong>(${data.pv.centerX}, ${data.pv.centerY}) &nbsp; <strong>半径：</strong>${data.pv.radius} &nbsp; <strong>P<sub>V</sub>：</strong>${data.pv.error} μm &nbsp; <strong>判定：</strong>${data.pv.result}</p>
+                    </div>
+                    
+                    <div class="page-break-avoid">
+                        <h2 class="section-title">七、二维探测误差 (P<sub>2D</sub>)</h2>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 6%;">序号</th>
+                                    <th>X</th>
+                                    <th>Y</th>
+                                    <th style="width: 6%;">序号</th>
+                                    <th>X</th>
+                                    <th>Y</th>
+                                    <th style="width: 6%;">序号</th>
+                                    <th>X</th>
+                                    <th>Y</th>
+                                    <th style="width: 6%;">序号</th>
+                                    <th>X</th>
+                                    <th>Y</th>
+                                    <th style="width: 6%;">序号</th>
+                                    <th>X</th>
+                                    <th>Y</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Array(5).fill(0).map((_, rowIdx) => `
+                                    <tr class="compact-row">
+                                        ${[0, 1, 2, 3, 4].map(colIdx => {
+                                            const idx = rowIdx * 5 + colIdx;
+                                            if (idx >= data.p2d.length) return '<td></td><td></td><td></td>';
+                                            return `<td style="text-align: center; font-size: 9px;">${idx + 1}</td>
+                                                    <td style="text-align: right; font-size: 9px;">${parseFloat(data.p2d[idx].x).toFixed(2)}</td>
+                                                    <td style="text-align: right; font-size: 9px;">${parseFloat(data.p2d[idx].y).toFixed(2)}</td>`;
+                                        }).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        <p style="margin: 5px 0; font-size: 10px;"><strong>圆心：</strong>(${data.p2d.centerX}, ${data.p2d.centerY}) &nbsp; <strong>半径：</strong>${data.p2d.radius} &nbsp; <strong>P<sub>2D</sub>：</strong>${data.p2d.error} μm &nbsp; <strong>判定：</strong>${data.p2d.result}</p>
+                    </div>
+                    
+                    <div class="page-break-avoid">
+                        <h2 class="section-title">八、变倍探测误差 (P<sub>Z</sub>)</h2>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>方向</th>
+                                    <th>200X倍率</th>
+                                    <th>150X倍率</th>
+                                    <th>100X倍率</th>
+                                    <th>Δ值 (μm)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="text-align: center; font-weight: bold;">X</td>
+                                    <td style="text-align: right;">${data.pz.x200}</td>
+                                    <td style="text-align: right;">${data.pz.x150}</td>
+                                    <td style="text-align: right;">${data.pz.x100}</td>
+                                    <td style="text-align: right; font-weight: bold;">${data.pz.deltaX}</td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: bold;">Y</td>
+                                    <td style="text-align: right;">${data.pz.y200}</td>
+                                    <td style="text-align: right;">${data.pz.y150}</td>
+                                    <td style="text-align: right;">${data.pz.y100}</td>
+                                    <td style="text-align: right; font-weight: bold;">${data.pz.deltaY}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p style="margin: 5px 0;"><strong>P<sub>Z</sub>：</strong>${data.pz.value} μm &nbsp; <strong>判定：</strong>${data.pz.result}</p>
+                    </div>
+                    
+                    <div class="page-break-avoid">
+                        <h2 class="section-title">九、核查结果汇总</h2>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%;">序号</th>
+                                    <th style="width: 60%;">项目名称</th>
+                                    <th style="width: 30%;">判定结果</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td style="text-align: center;">1</td><td>外观与功能性检查</td><td style="text-align: center;">${document.getElementById('summary_appearance').innerHTML}</td></tr>
+                                <tr><td style="text-align: center;">2</td><td>平面尺寸测量误差 (E<sub>XY</sub>)</td><td style="text-align: center;">${document.getElementById('summary_exy').innerHTML}</td></tr>
+                                <tr><td style="text-align: center;">3</td><td>垂直尺寸测量误差 (E<sub>Z</sub>)</td><td style="text-align: center;">${document.getElementById('summary_ez').innerHTML}</td></tr>
+                                <tr><td style="text-align: center;">4</td><td>影像测头尺寸测量误差 (E<sub>V</sub>)</td><td style="text-align: center;">${document.getElementById('summary_ev').innerHTML}</td></tr>
+                                <tr><td style="text-align: center;">5</td><td>影像测头探测误差 (P<sub>V</sub>)</td><td style="text-align: center;">${document.getElementById('summary_pv').innerHTML}</td></tr>
+                                <tr><td style="text-align: center;">6</td><td>二维探测误差 (P<sub>2D</sub>)</td><td style="text-align: center;">${document.getElementById('summary_p2d').innerHTML}</td></tr>
+                                <tr><td style="text-align: center;">7</td><td>变倍探测误差 (P<sub>Z</sub>)</td><td style="text-align: center;">${document.getElementById('summary_pz').innerHTML}</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="page-break-avoid" style="margin-top: 15px;">
+                        <h2 class="section-title">十、核查结论</h2>
+                        <div style="text-align: center; padding: 15px; border: 2px solid ${isFinalPass ? '#10b981' : '#ef4444'}; background-color: ${isFinalPass ? '#f0fdf4' : '#fef2f2'};">
+                            <p style="font-size: 16px; font-weight: bold; color: ${isFinalPass ? '#166534' : '#991b1b'};">${finalResultText}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 11px; color: #6b7280;">新疆中和鉴珠宝玉石质量检测研究所</div>
+                    <div style="margin-top: 25px; display: flex; justify-content: space-around;">
+                        <div style="text-align: center;">
+                            <p style="margin-bottom: 50px;">核查人：_______________ &nbsp; 日期：_______________</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <p style="margin-bottom: 50px;">复核人：_______________ &nbsp; 日期：_______________</p>
+                        </div>
+                    </div>
+                    
+                </div>
+            `;
+        }
+        
+        // ==================== 一键加载所有演示数据 ====================
+        function loadAllDemoData() {
+            if (!confirm('确定要加载所有演示数据吗？这将覆盖已输入的数据。')) {
+                return;
+            }
+            
+            // 步骤1: 基本信息
+            document.getElementById('deviceModel').value = 'DI-AM1160';
+            document.getElementById('deviceNumber').value = 'DEMO-2024-001';
+            document.getElementById('serialNumber').value = 'SN20240001';
+            document.getElementById('checkDate').valueAsDate = new Date();
+            document.getElementById('checkType').value = '定期';
+            document.getElementById('temperature').value = '20.5';
+            document.getElementById('humidity').value = '45';
+            document.getElementById('rulerNumber').value = 'RULER-001';
+            document.getElementById('gaugeNumber').value = 'GAUGE-001';
+            document.getElementById('targetNumber').value = 'TARGET-001';
+            document.getElementById('operator').value = '陈二狗';
+            document.getElementById('reviewer').value = '曹红';
+            
+            // 步骤2: 外观检查
+            document.getElementById('check1').checked = true;
+            document.getElementById('check2').checked = true;
+            document.getElementById('check3').checked = true;
+            document.getElementById('check4').checked = true;
+            updateAppearanceResult();
+            
+            // 步骤3: EXY
+            loadDemoDataEXY('x');
+            loadDemoDataEXY('y');
+            
+            // 步骤4: EZ
+            loadDemoDataEZ();
+            
+            // 步骤5: EV
+            loadDemoDataEV();
+            
+            // 步骤6: PV
+            loadDemoDataPV();
+            
+            // 步骤7: P2D
+            loadDemoDataP2D();
+            
+            // 步骤8: PZ
+            loadDemoDataPZ();
+            
+            alert('演示数据已加载完成！您可以点击"下一步"逐步查看各项核查内容。');
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UV-Vis 光谱导数分析工具</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Plotly.js for charting -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Math.js for Matrix calculations (Savitzky-Golay implementation) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        .chart-container { min-height: 400px; }
+        input[type=range] { accent-color: #3b82f6; }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+            </svg>
+            <h1 class="text-xl font-bold tracking-wide">UV-Vis 光谱导数分析工具</h1>
+        </div>
+        <button onclick="document.getElementById('fileInput').click()" class="bg-white text-blue-600 px-4 py-2 rounded-md font-semibold hover:bg-blue-50 transition shadow">
+            📂 上传数据文件
+        </button>
+        <input type="file" id="fileInput" accept=".txt,.csv" class="hidden" />
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Sidebar: Controls -->
+        <aside class="w-80 bg-white shadow-xl z-10 flex flex-col overflow-y-auto shrink-0">
+            <div class="p-6 space-y-8">
+                
+                <!-- Status Panel -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase mb-2">文件状态</h3>
+                    <p id="fileNameDisplay" class="text-gray-900 font-medium truncate">未选择文件</p>
+                    <p id="dataCountDisplay" class="text-xs text-gray-500 mt-1">-</p>
+                </div>
+
+                <!-- SG Filter Controls -->
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">平滑参数 (Savitzky-Golay)</h3>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            窗口大小 (Window Size): <span id="windowSizeVal" class="text-blue-600 font-bold">21</span>
+                        </label>
+                        <input type="range" id="windowSizeInput" min="5" max="101" step="2" value="21" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <p class="text-xs text-gray-500 mt-1">必须为奇数。值越大越平滑，但可能丢失细节。</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            多项式阶数 (Poly Order): <span id="polyOrderVal" class="text-blue-600 font-bold">2</span>
+                        </label>
+                        <input type="range" id="polyOrderInput" min="1" max="5" step="1" value="2" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <p class="text-xs text-gray-500 mt-1">值越小越平滑。通常设为 2 或 3。</p>
+                        <p class="text-xs text-red-500 mt-1 hidden" id="polyWarning">注意：阶数过低无法计算高阶导数</p>
+                    </div>
+                </div>
+
+                <!-- Export -->
+                <div class="pt-4 border-t">
+                    <button id="downloadBtn" disabled onclick="downloadCSV()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold shadow hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        导出结果数据 (.csv)
+                    </button>
+                </div>
+
+                <!-- Help Info -->
+                <div class="text-xs text-gray-400 mt-auto pt-8">
+                    <p>说明：本工具使用 Savitzky-Golay 滤波器对光谱数据进行平滑和求导。</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Charts Area -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 p-6 relative" id="mainArea">
+            <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
+                <div class="text-blue-600 font-bold text-lg animate-pulse">正在处理数据...</div>
+            </div>
+
+            <div class="max-w-5xl mx-auto space-y-6">
+                <!-- Original vs Smoothed -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div id="chartRaw" class="w-full h-[400px]"></div>
+                </div>
+
+                <!-- 1st Derivative -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div id="chartD1" class="w-full h-[350px]"></div>
+                </div>
+
+                <!-- 2nd Derivative -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div id="chartD2" class="w-full h-[350px]"></div>
+                </div>
+            </div>
+            
+            <!-- Empty State Placeholder -->
+            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-24 h-24 mb-4 opacity-20">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+                <p class="text-lg font-medium">请先上传 TXT 或 CSV 数据文件</p>
+                <p class="text-sm">支持格式：两列数据（波长, 透射率/吸光度）</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global State
+        let rawData = []; // Array of {x, y}
+        let processedData = []; // Array of {x, y, smooth, d1, d2}
+        let currentFileName = "";
+
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const windowInput = document.getElementById('windowSizeInput');
+        const polyInput = document.getElementById('polyOrderInput');
+        const windowVal = document.getElementById('windowSizeVal');
+        const polyVal = document.getElementById('polyOrderVal');
+        const emptyState = document.getElementById('emptyState');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const polyWarning = document.getElementById('polyWarning');
+
+        // Event Listeners
+        fileInput.addEventListener('change', handleFileUpload);
+        windowInput.addEventListener('input', (e) => {
+            // Ensure odd number
+            let val = parseInt(e.target.value);
+            if (val % 2 === 0) val += 1;
+            e.target.value = val;
+            windowVal.innerText = val;
+            if(rawData.length > 0) processAndPlot();
+        });
+        polyInput.addEventListener('input', (e) => {
+            let val = parseInt(e.target.value);
+            // Poly order must be < window size
+            if (val >= parseInt(windowInput.value)) {
+                val = parseInt(windowInput.value) - 1;
+                e.target.value = val;
+            }
+            polyVal.innerText = val;
+            
+            // Warn if poly order is too low for d2
+            if (val < 2) {
+                polyWarning.classList.remove('hidden');
+            } else {
+                polyWarning.classList.add('hidden');
+            }
+
+            if(rawData.length > 0) processAndPlot();
+        });
+
+        // 1. File Handling
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            currentFileName = file.name.split('.')[0];
+            document.getElementById('fileNameDisplay').innerText = file.name;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                parseData(text);
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                emptyState.classList.add('hidden');
+            };
+            reader.readAsText(file);
+        }
+
+        function parseData(text) {
+            rawData = [];
+            const lines = text.split(/\r\n|\n/);
+            
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+                
+                // Flexible separator handling (comma, tab, space)
+                let parts;
+                if (line.includes(',')) parts = line.split(',');
+                else if (line.includes('\t')) parts = line.split('\t');
+                else parts = line.split(/\s+/);
+
+                if (parts.length >= 2) {
+                    const x = parseFloat(parts[0]);
+                    const y = parseFloat(parts[1]);
+                    
+                    if (!isNaN(x) && !isNaN(y)) {
+                        rawData.push({x, y});
+                    }
+                }
+            });
+
+            document.getElementById('dataCountDisplay').innerText = `读取到 ${rawData.length} 个数据点`;
+            
+            if (rawData.length > 0) {
+                // Sort by X just in case
+                rawData.sort((a, b) => a.x - b.x);
+                downloadBtn.disabled = false;
+                processAndPlot();
+            } else {
+                alert("无法解析数据。请确保文件包含两列数字（波长，数值）。");
+            }
+        }
+
+        // 2. Savitzky-Golay Logic
+        // Using matrix approach to solve for coefficients dynamically for any window/order
+        function getSGCcoeffs(windowSize, polyOrder, deriv = 0) {
+            // Safety: Poly order must be >= derivative order to get a meaningful result.
+            // If poly order is less than deriv, the derivative is mathematically 0.
+            if (polyOrder < deriv) {
+                return new Float64Array(windowSize).fill(0);
+            }
+
+            const m = (windowSize - 1) / 2;
+            const rows = windowSize;
+            const cols = polyOrder + 1;
+            
+            // Construct Jacobian Matrix J
+            // J[i][j] = (i - m)^j
+            let J = [];
+            for (let i = 0; i < rows; i++) {
+                let row = [];
+                let k = i - m;
+                for (let j = 0; j < cols; j++) {
+                    row.push(Math.pow(k, j));
+                }
+                J.push(row);
+            }
+            
+            // Weights = (J^T * J)^-1 * J^T
+            // Using Math.js for matrix operations
+            try {
+                const matJ = math.matrix(J);
+                const matJT = math.transpose(matJ);
+                const matJTJ = math.multiply(matJT, matJ);
+                const inv = math.inv(matJTJ);
+                const coeffsMatrix = math.multiply(inv, matJT); // Shape: (poly+1) x window
+                
+                // The row index in coeffsMatrix corresponds to the derivative order (0=smooth, 1=1st deriv, etc)
+                const coeffsArray = coeffsMatrix.toArray();
+                
+                if (!coeffsArray || !coeffsArray[deriv]) {
+                     // Should be caught by top check, but extra safety
+                     return new Float64Array(windowSize).fill(0);
+                }
+
+                const coeffs = coeffsArray[deriv];
+                
+                // Scale by factorial
+                let factorial = 1;
+                for (let f = 1; f <= deriv; f++) factorial *= f;
+                
+                return coeffs.map(c => c * factorial);
+
+            } catch (err) {
+                console.error("Matrix inversion failed", err);
+                // Fallback: If it's smoothing (deriv=0), use moving average.
+                // If it's derivative (deriv > 0), return 0s because moving average is not a derivative.
+                if (deriv === 0) {
+                    return Array(windowSize).fill(1/windowSize); 
+                } else {
+                    return new Float64Array(windowSize).fill(0);
+                }
+            }
+        }
+
+        function convolve(dataY, coeffs) {
+            const N = dataY.length;
+            const M = coeffs.length;
+            const halfM = Math.floor(M / 2);
+            const result = new Float64Array(N);
+
+            for (let i = 0; i < N; i++) {
+                if (i < halfM || i >= N - halfM) {
+                    // Padding strategy: Replicate edge
+                    result[i] = dataY[i]; 
+                    // Better edge handling for SG is complex, for visualization simply keeping raw or zero is common.
+                    // Let's use nearest neighbor to avoid harsh drops
+                    let sum = 0;
+                    for (let j = 0; j < M; j++) {
+                         let idx = i - halfM + j;
+                         if (idx < 0) idx = 0;
+                         if (idx >= N) idx = N - 1;
+                         sum += dataY[idx] * coeffs[j];
+                    }
+                    result[i] = sum;
+                } else {
+                    let sum = 0;
+                    for (let j = 0; j < M; j++) {
+                        sum += dataY[i - halfM + j] * coeffs[j];
+                    }
+                    result[i] = sum;
+                }
+            }
+            return result;
+        }
+
+        // 3. Main Processing Function
+        function processAndPlot() {
+            const windowSize = parseInt(windowInput.value);
+            const polyOrder = parseInt(polyInput.value);
+            
+            // Extract arrays
+            const X = rawData.map(d => d.x);
+            const Y = rawData.map(d => d.y);
+            
+            // Calculate average delta X for scaling derivatives
+            // SG deriv coefficients give dy/d(step). We need dy/dx.
+            // dy/dx = (dy/dstep) * (1/dx)
+            let sumDx = 0;
+            for(let i=1; i<X.length; i++) sumDx += (X[i] - X[i-1]);
+            const avgDx = sumDx / (X.length - 1);
+
+            // 1. Smoothing (0th deriv)
+            const smoothCoeffs = getSGCcoeffs(windowSize, polyOrder, 0);
+            const Y_smooth = convolve(Y, smoothCoeffs);
+
+            // 2. 1st Derivative
+            // We can compute coeffs for deriv=1 directly
+            const d1Coeffs = getSGCcoeffs(windowSize, polyOrder, 1);
+            let Y_d1 = convolve(Y, d1Coeffs);
+            // Scale by dx
+            for(let i=0; i<Y_d1.length; i++) Y_d1[i] /= avgDx;
+
+            // 3. 2nd Derivative
+            const d2Coeffs = getSGCcoeffs(windowSize, polyOrder, 2);
+            let Y_d2 = convolve(Y, d2Coeffs);
+            // Scale by dx^2
+            for(let i=0; i<Y_d2.length; i++) Y_d2[i] /= Math.pow(avgDx, 2);
+
+            // Store for export
+            processedData = rawData.map((d, i) => ({
+                x: d.x,
+                raw: d.y,
+                smooth: Y_smooth[i],
+                d1: Y_d1[i],
+                d2: Y_d2[i]
+            }));
+
+            plotCharts(X, Y, Y_smooth, Y_d1, Y_d2);
+        }
+
+        // 4. Plotting
+        function plotCharts(x, yRaw, ySmooth, yD1, yD2) {
+            const commonLayout = {
+                margin: { t: 40, r: 20, l: 60, b: 40 },
+                showlegend: true,
+                legend: { x: 0, y: 1 },
+                hovermode: 'x unified',
+                plot_bgcolor: "#fff",
+                paper_bgcolor: "#fff",
+            };
+
+            // Chart 1: Raw vs Smooth
+            Plotly.newPlot('chartRaw', [
+                { x: x, y: yRaw, name: '原始数据', line: { color: '#e5e7eb', width: 2 } },
+                { x: x, y: ySmooth, name: '平滑后 (SG)', line: { color: '#2563eb', width: 2 } }
+            ], { ...commonLayout, title: '原始图谱 vs 平滑处理', yaxis: { title: '强度 / 透射率' } });
+
+            // Chart 2: 1st Deriv
+            Plotly.newPlot('chartD1', [
+                { x: x, y: yD1, name: '一阶导数', line: { color: '#16a34a', width: 2 } }
+            ], { ...commonLayout, title: '一阶导数图谱 (First Derivative)', yaxis: { title: 'dA / dλ' } });
+
+            // Chart 3: 2nd Deriv
+            Plotly.newPlot('chartD2', [
+                { x: x, y: yD2, name: '二阶导数', line: { color: '#dc2626', width: 2 } }
+            ], { ...commonLayout, title: '二阶导数图谱 (Second Derivative)', yaxis: { title: 'd²A / dλ²' }, xaxis: { title: '波长 (Wavelength)' } });
+        }
+
+        // 5. Export
+        function downloadCSV() {
+            if (processedData.length === 0) return;
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Wavelength,Original_Value,Smoothed_Value,1st_Derivative,2nd_Derivative\n";
+
+            processedData.forEach(row => {
+                csvContent += `${row.x},${row.raw},${row.smooth},${row.d1},${row.d2}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            
+            // Timestamp in filename
+            const date = new Date();
+            const timestamp = date.toISOString().slice(0,19).replace(/:/g,"-");
+            link.setAttribute("download", `${currentFileName}_processed_${timestamp}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

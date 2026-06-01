@@ -1,0 +1,16 @@
+{
+    "默认配置": {
+        "smooth_win": 15,
+        "smooth_poly": 3,
+        "baseline_enable": true,
+        "baseline_lam": 5.0,
+        "deriv_win": 21,
+        "deriv_win_2nd": 41,
+        "deriv_poly": 3,
+        "peak_enable": true,
+        "peak_source": "基线校正后",
+        "peak_mode": "自动",
+        "peak_prom": 0.02,
+        "peak_dist": 10
+    }
+}
