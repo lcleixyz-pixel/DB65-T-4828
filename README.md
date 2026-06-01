@@ -118,10 +118,11 @@ git status
 # 查看历史
 git log --oneline
 
-# 关联远程并推送（需自行创建空仓库后替换 URL）
-git remote add origin <你的仓库 URL>
+# 推送到 GitHub（远程已配置）
 git push -u origin main
 ```
+
+**远程仓库**：[https://github.com/lcleixyz-pixel/DB65-T-4828](https://github.com/lcleixyz-pixel/DB65-T-4828.git)
 
 `.gitignore` 已排除 `.venv`、`__pycache__` 及本地导出的 xlsx 等；`presets.json` 会纳入版本库。
 
